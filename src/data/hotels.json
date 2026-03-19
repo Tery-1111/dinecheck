@@ -1,0 +1,89 @@
+[
+  {
+    "id": 1,
+    "name": "horyzon",
+    "location": "njoks",
+    "meals": "chafua",
+    "ratings": [
+      {
+        "meal": "chapo",
+        "score": 2,
+        "comment": "",
+        "date": "2026-03-16"
+      },
+      {
+        "meal": "bhajia",
+        "score": 7,
+        "comment": "sweetese",
+        "username": "@njenga_spoon",
+        "date": "2026-03-16"
+      }
+    ],
+    "photos": [
+      {
+        "filename": "1773703698888-images.jpeg",
+        "url": "/uploads/1773703698888-images.jpeg",
+        "uploadedBy": "@njenga_spoon",
+        "date": "2026-03-16"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Riverside Cafe",
+    "location": "Njoro Town",
+    "meals": "Chapo, Beans, Pilau",
+    "ratings": [
+      {
+        "meal": "chapo",
+        "score": 8,
+        "comment": "Very good",
+        "username": " @njenga_spoon",
+        "date": "2026-03-16"
+      },
+      {
+        "meal": "chapo",
+        "score": 8,
+        "comment": "Very good",
+        "username": " @njenga_spoon",
+        "date": "2026-03-16"
+      },
+      {
+        "meal": "chapo",
+        "score": 8,
+        "comment": "Very good",
+        "username": " @njenga_spoon",
+        "date": "2026-03-16"
+      },
+      {
+        "meal": "chapo",
+        "score": 9,
+        "comment": "swees",
+        "username": "@njenga_spoon",
+        "date": "2026-03-16"
+      },
+      {
+        "meal": "chapo",
+        "score": 8,
+        "comment": "",
+        "username": "@njenga_spoon",
+        "mood": "functional",
+        "aroma": null,
+        "date": "2026-03-17"
+      }
+    ],
+    "speeds": [
+      {
+        "waitSeconds": 5,
+        "date": "2026-03-17"
+      }
+    ],
+    "quickvotes": [
+      {
+        "vote": "up",
+        "username": "anonymous",
+        "date": "2026-03-17"
+      }
+    ]
+  }
+]

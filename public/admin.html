@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DineCheck Admin</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:Arial,sans-serif; background:#1a1a2e; color:#eee; }
+    header { background:#16213e; padding:20px; text-align:center; border-bottom:2px solid #e63946; }
+    header h1 { color:#e63946; font-size:1.8rem; }
+    header p { color:#aaa; font-size:0.85rem; margin-top:4px; }
+    .login-box { max-width:400px; margin:80px auto; background:#16213e; border-radius:10px; padding:30px; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
+    .login-box h2 { margin-bottom:20px; color:#e63946; }
+    .login-box input { width:100%; padding:10px; margin-bottom:12px; border:1px solid #333; border-radius:6px; background:#0f3460; color:white; font-size:1rem; }
+    .login-box button { width:100%; background:#e63946; color:white; border:none; padding:12px; border-radius:6px; font-size:1rem; cursor:pointer; }
+    .admin-panel { display:none; }
+    nav { background:#16213e; display:flex; justify-content:center; gap:10px; padding:12px; border-bottom:1px solid #333; flex-wrap:wrap; }
+    nav button { background:transparent; color:#aaa; border:1px solid #333; padding:6px 16px; border-radius:20px; cursor:pointer; font-size:0.9rem; }
+    nav button.active { background:#e63946; color:white; border-color:#e63946; }
+    .page { display:none; }
+    .page.active { display:block; }
+    .container { max-width:900px; margin:30px auto; padding:0 20px; }
+    h2 { margin-bottom:20px; color:#e63946; }
+    h3 { color:#eee; margin-bottom:10px; }
+    .card { background:#16213e; border-radius:10px; padding:20px; margin-bottom:15px; border:1px solid #333; }
+    .card p { color:#aaa; font-size:0.85rem; margin-bottom:4px; }
+    .btn-confirm { background:#2a9d8f; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; margin-right:8px; font-size:0.85rem; }
+    .btn-reject { background:#e63946; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:0.85rem; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.75rem; margin-bottom:8px; }
+    .badge-pending { background:#f4a261; color:white; }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:15px; margin-bottom:30px; }
+    .stat-card { background:#16213e; border-radius:10px; padding:20px; text-align:center; border:1px solid #333; }
+    .stat-card .number { font-size:2rem; font-weight:bold; color:#e63946; }
+    .stat-card .label { color:#aaa; font-size:0.85rem; margin-top:5px; }
+    .no-results { color:#666; font-size:0.9rem; }
+    .input-row { display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap; }
+    .input-row input { flex:1; padding:10px; border:1px solid #333; border-radius:6px; background:#0f3460; color:white; font-size:0.9rem; min-width:200px; }
+    .input-row button { background:#e63946; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; }
+    .form-section { background:#16213e; border-radius:10px; padding:25px; margin-bottom:20px; border:1px solid #333; }
+    .form-section input, .form-section select { width:100%; padding:10px; margin-bottom:12px; border:1px solid #333; border-radius:6px; background:#0f3460; color:white; font-size:0.95rem; }
+    .form-section label { color:#aaa; font-size:0.85rem; display:block; margin-bottom:4px; }
+    .form-section button { background:#e63946; color:white; border:none; padding:12px 25px; border-radius:6px; font-size:1rem; cursor:pointer; }
+    .meals-picker { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; margin-bottom:16px; }
+    .meal-pick-row { display:flex; align-items:center; gap:8px; background:#0f3460; border-radius:6px; padding:8px 10px; }
+    .meal-pick-row input[type="checkbox"] { width:16px; height:16px; cursor:pointer; }
+    .meal-pick-row label { flex:1; color:#eee; font-size:0.85rem; cursor:pointer; }
+    .meal-pick-row input[type="number"] { width:80px; padding:4px 8px; border:1px solid #333; border-radius:4px; background:#1a1a2e; color:white; font-size:0.85rem; }
+    .success-msg { color:#2a9d8f; font-size:0.9rem; margin-top:10px; }
+    .error-msg { color:#e63946; font-size:0.9rem; margin-top:10px; }
+    .rating-adj-row { display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+    .rating-adj-row input, .rating-adj-row select { padding:8px; border:1px solid #333; border-radius:6px; background:#0f3460; color:white; font-size:0.85rem; }
+    .poll-adj-row { display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+    .poll-adj-row input, .poll-adj-row select { padding:8px; border:1px solid #333; border-radius:6px; background:#0f3460; color:white; font-size:0.85rem; }
+    .meal-photo-row { background:#0f3460; border-radius:8px; padding:12px; margin-bottom:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .meal-photo-preview { width:50px; height:40px; object-fit:cover; border-radius:6px; }
+    .meal-photo-placeholder { width:50px; height:40px; background:#1a1a2e; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:1.2rem; }
+    .settings-card { background:#16213e; border-radius:10px; padding:25px; margin-bottom:20px; border:1px solid #333; }
+    .settings-card h3 { color:#eee; margin-bottom:15px; font-size:1.1rem; }
+    .settings-card input[type="password"] { width:100%; padding:10px; margin-bottom:12px; border:1px solid #333; border-radius:6px; background:#0f3460; color:white; font-size:0.95rem; }
+    .pass-msg { font-size:0.9rem; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🍛 DineCheck Admin</h1>
+    <p>Developer Control Panel</p>
+  </header>
+
+  <div class="login-box" id="loginBox">
+    <h2>🔐 Admin Login</h2>
+    <input type="password" id="adminPass" placeholder="Enter admin password" />
+    <button onclick="adminLogin()">Login</button>
+    <p id="loginError" style="color:#e63946;margin-top:10px"></p>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <nav>
+      <button class="active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
+      <button onclick="showTab('addhotel',this)">🏨 Add Hotel</button>
+      <button onclick="showTab('mealphotos',this)">🖼️ Meal Photos</button>
+      <button onclick="showTab('managehotels',this)">⚙️ Manage Hotels</button>
+      <button onclick="showTab('payments',this)">💰 Payments</button>
+      <button onclick="showTab('comrades',this)">👥 Comrades</button>
+      <button onclick="showTab('moderation',this)">🚨 Moderation</button>
+      <button onclick="showTab('settings',this)">🔐 Settings</button>
+    </nav>
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="tab-dashboard">
+      <div class="container">
+        <h2>📊 Dashboard</h2>
+        <div class="stats-grid" id="statsGrid"></div>
+      </div>
+    </div>
+
+    <!-- ADD HOTEL -->
+    <div class="page" id="tab-addhotel">
+      <div class="container">
+        <h2>🏨 Add New Hotel</h2>
+        <div class="form-section">
+          <label>Hotel Name</label>
+          <input type="text" id="newHotelName" placeholder="e.g. Mama Njeri Hotel" />
+          <label>Location</label>
+          <input type="text" id="newHotelLocation" placeholder="e.g. Njoro Town" />
+          <label>Hotel Photos (up to 3)</label>
+          <input type="file" id="newHotelPhotos" accept="image/*" multiple style="background:#0f3460;color:#eee;padding:8px;margin-bottom:12px" />
+          <label>Menu Photo (optional)</label>
+          <input type="file" id="newHotelMenu" accept="image/*" style="background:#0f3460;color:#eee;padding:8px;margin-bottom:16px" />
+          <label>Select Meals Offered + Prices (KSh)</label>
+          <div class="meals-picker" id="mealsPicker"></div>
+          <button onclick="submitNewHotel()">✅ Add Hotel</button>
+          <p id="addHotelMsg"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEAL PHOTOS -->
+    <div class="page" id="tab-mealphotos">
+      <div class="container">
+        <h2>🖼️ Meal Photos</h2>
+        <p style="color:#aaa;margin-bottom:20px">Upload a default photo for each meal. Hotels can also have unique meal photos.</p>
+        <div class="form-section" style="margin-bottom:20px">
+          <h3 style="margin-bottom:15px">Upload Hotel-Specific Meal Photo</h3>
+          <label>Select Hotel</label>
+          <select id="hotelMealPhotoSelect" style="width:100%;padding:10px;margin-bottom:12px;border:1px solid #333;border-radius:6px;background:#0f3460;color:white">
+            <option value="">-- Global (no specific hotel) --</option>
+          </select>
+          <label>Select Meal</label>
+          <select id="mealSelectForPhoto" style="width:100%;padding:10px;margin-bottom:12px;border:1px solid #333;border-radius:6px;background:#0f3460;color:white"></select>
+          <label>Photo</label>
+          <input type="file" id="specificMealPhoto" accept="image/*" style="background:#0f3460;color:#eee;padding:8px;margin-bottom:12px" />
+          <button onclick="uploadSpecificMealPhoto()" style="background:#2a9d8f;color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer">Upload</button>
+          <p id="specificMealPhotoMsg" class="success-msg"></p>
+        </div>
+        <h3 style="margin-bottom:15px">All 47 Meal Default Photos</h3>
+        <div id="mealPhotoUploader"></div>
+      </div>
+    </div>
+
+    <!-- MANAGE HOTELS -->
+    <div class="page" id="tab-managehotels">
+      <div class="container">
+        <h2>⚙️ Manage Hotels</h2>
+        <div id="manageHotelsList"></div>
+      </div>
+    </div>
+
+    <!-- PAYMENTS -->
+    <div class="page" id="tab-payments">
+      <div class="container">
+        <h2>💰 Pending Payments</h2>
+        <div id="pendingPayments"></div>
+        <h2 style="margin-top:30px">✅ Confirm Payment Manually</h2>
+        <div class="input-row">
+          <input type="text" id="confirmCode" placeholder="M-Pesa transaction code" />
+          <button onclick="confirmPayment()">Confirm</button>
+        </div>
+        <p id="confirmMsg" style="color:#2a9d8f"></p>
+      </div>
+    </div>
+
+    <!-- COMRADES -->
+    <div class="page" id="tab-comrades">
+      <div class="container">
+        <h2>👥 All Comrades</h2>
+        <div id="allComrades"></div>
+      </div>
+    </div>
+
+    <!-- MODERATION -->
+    <div class="page" id="tab-moderation">
+      <div class="container">
+        <h2>🚨 Moderation</h2>
+        <div class="card">
+          <h3>⭐ Adjust Hotel Rating</h3>
+          <p style="margin-bottom:12px">Override a hotel's rating based on verified external data.</p>
+          <div class="rating-adj-row">
+            <select id="adjHotelSelect" style="flex:1"></select>
+            <input type="text" id="adjMeal" placeholder="Meal (optional)" style="width:140px" />
+            <input type="number" id="adjScore" placeholder="Score 1-10" min="1" max="10" style="width:120px" />
+            <input type="text" id="adjComment" placeholder="Reason" style="flex:1" />
+            <button class="btn-confirm" onclick="adjustRating()">Apply</button>
+          </div>
+          <p id="adjMsg" class="success-msg"></p>
+        </div>
+        <div class="card">
+          <h3>🗳️ Adjust Poll Result</h3>
+          <p style="margin-bottom:12px">Correct a poll result based on real verified data.</p>
+          <div class="poll-adj-row">
+            <select id="pollAdjHotel" style="flex:1"></select>
+            <select id="pollAdjQuestion" style="width:200px">
+              <option value="1">🧼 Good Hygiene?</option>
+              <option value="2">💰 Value for Money?</option>
+              <option value="3">🍽️ Generous Portions?</option>
+              <option value="4">🥬 Fresh Ingredients?</option>
+              <option value="5">😊 Friendly Staff?</option>
+            </select>
+            <input type="number" id="pollAdjYes" placeholder="Yes votes" style="width:100px" />
+            <input type="number" id="pollAdjNo" placeholder="No votes" style="width:100px" />
+            <button class="btn-confirm" onclick="adjustPoll()">Apply</button>
+          </div>
+          <p id="pollAdjMsg" class="success-msg"></p>
+        </div>
+        <div class="card">
+          <h3>🚫 Suspend Comrade Account</h3>
+          <p style="margin-bottom:12px">Remove accounts spreading non-hotel related content or fake reviews.</p>
+          <div class="input-row">
+            <input type="text" id="suspendUsername" placeholder="Comrade handle e.g. @username" />
+            <input type="text" id="suspendReason" placeholder="Reason for suspension" />
+            <button class="btn-reject" onclick="suspendAccount()">Suspend</button>
+          </div>
+          <p id="suspendMsg" class="success-msg"></p>
+        </div>
+        <div class="card">
+          <h3>🗑️ Remove Hotel Rating</h3>
+          <p style="margin-bottom:12px">Delete a specific overrated or fake rating.</p>
+          <div class="rating-adj-row">
+            <select id="removeRatingHotel" style="flex:1" onchange="loadRatingsForRemoval()"></select>
+          </div>
+          <div id="ratingsForRemoval" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="tab-settings">
+      <div class="container">
+        <h2>🔐 Settings</h2>
+        <div class="settings-card">
+          <h3>Change Admin Password</h3>
+          <p style="color:#aaa;margin-bottom:15px;font-size:0.85rem">Update your admin login password. Minimum 6 characters.</p>
+          <input type="password" id="currentPass" placeholder="Current password" />
+          <input type="password" id="newPass" placeholder="New password" />
+          <input type="password" id="confirmPass" placeholder="Confirm new password" />
+          <button class="btn-confirm" onclick="changePassword()">Update Password</button>
+          <p id="passMsg" class="pass-msg"></p>
+        </div>
+        <div class="settings-card">
+          <h3>Admin Access Link</h3>
+          <p style="color:#aaa;font-size:0.85rem;margin-bottom:10px">Share this link only with trusted developers. The admin panel is hidden from regular users on the main app.</p>
+          <div style="background:#0f3460;border-radius:6px;padding:12px;font-size:0.85rem;color:#2a9d8f;word-break:break-all" id="adminLink"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let ADMIN_PASSWORD = 'dinecheck2026';
+    let allMeals = [];
+    let allHotels = [];
+
+    fetch('/api/users/admin/password').then(r=>r.json()).then(data=>{ ADMIN_PASSWORD=data.password; });
+
+    function adminLogin() {
+      const pass = document.getElementById('adminPass').value;
+      if (pass === ADMIN_PASSWORD) {
+        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('adminLink').textContent = window.location.href;
+        loadDashboard();
+        loadMealsPicker();
+      } else {
+        document.getElementById('loginError').textContent = 'Wrong password.';
+      }
+    }
+
+    function showTab(name, btn) {
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+      document.getElementById('tab-'+name).classList.add('active');
+      btn.classList.add('active');
+      if (name==='dashboard') loadDashboard();
+      if (name==='payments') loadPayments();
+      if (name==='comrades') loadComrades();
+      if (name==='managehotels') loadManageHotels();
+      if (name==='moderation') loadModerationSelects();
+      if (name==='mealphotos') loadMealPhotosTab();
+    }
+
+    function loadDashboard() {
+      Promise.all([
+        fetch('/api/users').then(r=>r.json()),
+        fetch('/api/hotels').then(r=>r.json()),
+        fetch('/api/payments/pending').then(r=>r.json())
+      ]).then(([users,hotels,pending]) => {
+        allHotels=hotels;
+        const totalRatings=hotels.reduce((sum,h)=>sum+h.ratings.length,0);
+        const totalVotes=hotels.reduce((sum,h)=>sum+(h.quickvotes?h.quickvotes.length:0),0);
+        document.getElementById('statsGrid').innerHTML=
+          statCard(users.length,'Comrades')+statCard(hotels.length,'Hotels')+
+          statCard(totalRatings,'Full Ratings')+statCard(totalVotes,'Quick Votes')+
+          statCard(pending.length,'Pending Payments')+statCard(users.filter(u=>u.premium).length,'Premium Comrades');
+      });
+    }
+
+    function statCard(num,label){return '<div class="stat-card"><div class="number">'+num+'</div><div class="label">'+label+'</div></div>';}
+
+    function loadMealsPicker() {
+      fetch('/api/meals').then(r=>r.json()).then(meals=>{
+        allMeals=meals;
+        const picker=document.getElementById('mealsPicker');
+        picker.innerHTML='';
+        meals.forEach(m=>{
+          picker.innerHTML+='<div class="meal-pick-row"><input type="checkbox" id="pick-'+m.id+'" value="'+m.name+'" /><label for="pick-'+m.id+'">'+m.name+'</label><input type="number" id="price-'+m.id+'" placeholder="KSh" min="0" /></div>';
+        });
+      });
+    }
+
+    function loadMealPhotosTab() {
+      fetch('/api/meals').then(r=>r.json()).then(meals=>{
+        allMeals=meals;
+        const mealSel=document.getElementById('mealSelectForPhoto');
+        mealSel.innerHTML='';
+        meals.forEach(m=>{mealSel.innerHTML+='<option value="'+m.id+'">'+m.name+'</option>';});
+        fetch('/api/hotels').then(r=>r.json()).then(hotels=>{
+          const hotelSel=document.getElementById('hotelMealPhotoSelect');
+          hotelSel.innerHTML='<option value="">-- Global (no specific hotel) --</option>';
+          hotels.forEach(h=>{hotelSel.innerHTML+='<option value="'+h.id+'">'+h.name+'</option>';});
+        });
+        loadMealPhotoUploader();
+      });
+    }
+
+    function loadMealPhotoUploader() {
+      fetch('/api/mealphotos').then(r=>r.json()).then(photos=>{
+        const div=document.getElementById('mealPhotoUploader');
+        if(!div)return;
+        div.innerHTML='';
+        allMeals.forEach(m=>{
+          const existing=photos.find(p=>p.mealId===m.id&&!p.hotelId);
+          div.innerHTML+='<div class="meal-photo-row">'+(existing?'<img src="'+existing.url+'" class="meal-photo-preview" />':'<div class="meal-photo-placeholder">🍽️</div>')+'<span style="flex:1;color:#eee;font-size:0.9rem">'+m.name+'</span><input type="file" id="mphoto-'+m.id+'" accept="image/*" style="color:#aaa;font-size:0.8rem;flex:1" /><button onclick="uploadMealPhoto('+m.id+',\''+m.name+'\')" style="background:#2a9d8f;color:white;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:0.85rem">Upload</button></div>';
+        });
+      });
+    }
+
+    function uploadMealPhoto(mealId,mealName) {
+      const fileInput=document.getElementById('mphoto-'+mealId);
+      if(!fileInput.files[0]){alert('Please select a photo for '+mealName);return;}
+      const formData=new FormData();
+      formData.append('photo',fileInput.files[0]);
+      formData.append('mealId',mealId);
+      formData.append('mealName',mealName);
+      fetch('/api/mealphotos/upload',{method:'POST',body:formData}).then(r=>r.json()).then(()=>loadMealPhotoUploader());
+    }
+
+    function uploadSpecificMealPhoto() {
+      const hotelId=document.getElementById('hotelMealPhotoSelect').value;
+      const mealId=document.getElementById('mealSelectForPhoto').value;
+      const mealName=allMeals.find(m=>m.id===parseInt(mealId))?.name||'';
+      const fileInput=document.getElementById('specificMealPhoto');
+      if(!fileInput.files[0]){alert('Please select a photo');return;}
+      const formData=new FormData();
+      formData.append('photo',fileInput.files[0]);
+      formData.append('mealId',mealId);
+      formData.append('mealName',mealName);
+      if(hotelId)formData.append('hotelId',hotelId);
+      fetch('/api/mealphotos/upload',{method:'POST',body:formData}).then(r=>r.json()).then(()=>{
+        document.getElementById('specificMealPhotoMsg').textContent='✅ Photo uploaded for '+mealName+(hotelId?' at selected hotel':' (global)');
+        fileInput.value='';
+        loadMealPhotoUploader();
+      });
+    }
+
+    function submitNewHotel() {
+      const name=document.getElementById('newHotelName').value;
+      const location=document.getElementById('newHotelLocation').value;
+      if(!name||!location){document.getElementById('addHotelMsg').textContent='Please fill in hotel name and location.';return;}
+      const selectedMeals=[];
+      allMeals.forEach(m=>{
+        const cb=document.getElementById('pick-'+m.id);
+        const price=document.getElementById('price-'+m.id).value;
+        if(cb&&cb.checked){selectedMeals.push(m.name+(price?' (KSh '+price+')':''));}
+      });
+      if(!selectedMeals.length){document.getElementById('addHotelMsg').textContent='Please select at least one meal.';return;}
+      fetch('/api/hotels',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,location,meals:selectedMeals.join(', ')})})
+        .then(r=>r.json()).then(data=>{
+          document.getElementById('addHotelMsg').className='success-msg';
+          document.getElementById('addHotelMsg').textContent='✅ Hotel "'+data.name+'" added!';
+          document.getElementById('newHotelName').value='';
+          document.getElementById('newHotelLocation').value='';
+          document.querySelectorAll('.meal-pick-row input[type="checkbox"]').forEach(cb=>cb.checked=false);
+          document.querySelectorAll('.meal-pick-row input[type="number"]').forEach(inp=>inp.value='');
+          loadDashboard();
+        });
+    }
+
+    function loadManageHotels() {
+      fetch('/api/hotels').then(r=>r.json()).then(hotels=>{
+        allHotels=hotels;
+        const div=document.getElementById('manageHotelsList');
+        if(!hotels.length){div.innerHTML='<p class="no-results">No hotels yet.</p>';return;}
+        div.innerHTML='';
+        hotels.forEach(h=>{
+          const avg=h.ratings.length>0?(h.ratings.reduce((s,r)=>s+r.score,0)/h.ratings.length).toFixed(1):'No ratings';
+          div.innerHTML+='<div class="card"><h3>🏨 '+h.name+'</h3><p>📍 '+h.location+'</p><p>🍽️ '+h.meals+'</p><p>⭐ Avg: '+avg+' · '+h.ratings.length+' rating(s) · '+(h.quickvotes?h.quickvotes.length:0)+' quick vote(s)</p><div style="margin-top:12px"><button class="btn-reject" onclick="deleteHotel('+h.id+')">🗑️ Remove Hotel</button></div></div>';
+        });
+      });
+    }
+
+    function deleteHotel(id) {
+      if(!confirm('Remove this hotel? This cannot be undone.'))return;
+      fetch('/api/hotels/'+id+'/delete',{method:'POST'}).then(r=>r.json()).then(()=>loadManageHotels());
+    }
+
+    function loadModerationSelects() {
+      fetch('/api/hotels').then(r=>r.json()).then(hotels=>{
+        allHotels=hotels;
+        ['adjHotelSelect','pollAdjHotel','removeRatingHotel'].forEach(id=>{
+          const sel=document.getElementById(id);
+          sel.innerHTML='<option value="">-- Select Hotel --</option>';
+          hotels.forEach(h=>{sel.innerHTML+='<option value="'+h.id+'">'+h.name+'</option>';});
+        });
+      });
+    }
+
+    function adjustRating() {
+      const hotelId=parseInt(document.getElementById('adjHotelSelect').value);
+      const score=parseInt(document.getElementById('adjScore').value);
+      const meal=document.getElementById('adjMeal').value||'General';
+      const comment=document.getElementById('adjComment').value||'Admin adjustment';
+      if(!hotelId||!score){document.getElementById('adjMsg').textContent='Please select a hotel and score.';return;}
+      fetch('/api/hotels/'+hotelId+'/rate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({meal,score,comment,username:'@admin'})})
+        .then(()=>{document.getElementById('adjMsg').textContent='✅ Rating adjustment applied.';loadDashboard();});
+    }
+
+    function adjustPoll() {
+      const hotelId=parseInt(document.getElementById('pollAdjHotel').value);
+      const questionId=parseInt(document.getElementById('pollAdjQuestion').value);
+      const yes=parseInt(document.getElementById('pollAdjYes').value)||0;
+      const no=parseInt(document.getElementById('pollAdjNo').value)||0;
+      if(!hotelId){document.getElementById('pollAdjMsg').textContent='Please select a hotel.';return;}
+      fetch('/api/polls/adjust',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotelId,questionId,yes,no})})
+        .then(r=>r.json()).then(data=>{document.getElementById('pollAdjMsg').textContent=data.message||'✅ Poll adjusted.';});
+    }
+
+    function suspendAccount() {
+      const username=document.getElementById('suspendUsername').value;
+      const reason=document.getElementById('suspendReason').value;
+      if(!username){document.getElementById('suspendMsg').textContent='Please enter a username.';return;}
+      fetch('/api/users/suspend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,reason})})
+        .then(r=>r.json()).then(data=>{document.getElementById('suspendMsg').textContent=data.message||data.error;loadComrades();});
+    }
+
+    function loadRatingsForRemoval() {
+      const hotelId=parseInt(document.getElementById('removeRatingHotel').value);
+      if(!hotelId)return;
+      fetch('/api/hotels').then(r=>r.json()).then(hotels=>{
+        const hotel=hotels.find(h=>h.id===hotelId);
+        const div=document.getElementById('ratingsForRemoval');
+        if(!hotel||!hotel.ratings.length){div.innerHTML='<p class="no-results">No ratings for this hotel.</p>';return;}
+        div.innerHTML='';
+        hotel.ratings.forEach((r,i)=>{
+          div.innerHTML+='<div style="display:flex;justify-content:space-between;align-items:center;background:#0f3460;border-radius:6px;padding:8px 12px;margin-bottom:6px"><span style="font-size:0.85rem"><strong>'+r.meal+'</strong> — '+r.score+'/10 '+(r.username?'by '+r.username:'')+' · '+r.date+(r.comment?' · "'+r.comment+'"':'')+'</span><button class="btn-reject" style="padding:4px 10px;font-size:0.8rem" onclick="removeRating('+hotelId+','+i+')">Remove</button></div>';
+        });
+      });
+    }
+
+    function removeRating(hotelId,index) {
+      if(!confirm('Remove this rating?'))return;
+      fetch('/api/hotels/'+hotelId+'/rating/'+index,{method:'DELETE'}).then(r=>r.json()).then(()=>loadRatingsForRemoval());
+    }
+
+    function loadPayments() {
+      fetch('/api/payments/pending').then(r=>r.json()).then(payments=>{
+        const div=document.getElementById('pendingPayments');
+        if(!payments.length){div.innerHTML='<p class="no-results">No pending payments.</p>';return;}
+        div.innerHTML='';
+        payments.forEach(p=>{
+          div.innerHTML+='<div class="card"><span class="badge badge-pending">Pending</span><h3>@'+p.username+'</h3><p>Transaction: <strong style="color:#f4a261">'+p.transactionCode+'</strong></p><p>Amount: KSh '+p.amount+' · Submitted: '+p.submittedDate+'</p><br><button class="btn-confirm" onclick="confirmCode(\''+p.transactionCode+'\')">✅ Confirm</button></div>';
+        });
+      });
+    }
+
+    function confirmCode(code) {
+      fetch('/api/payments/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transactionCode:code})})
+        .then(r=>r.json()).then(data=>{alert(data.message||data.error);loadPayments();loadDashboard();});
+    }
+
+    function confirmPayment() {
+      const code=document.getElementById('confirmCode').value;
+      if(!code)return;
+      confirmCode(code);
+      document.getElementById('confirmCode').value='';
+    }
+
+    function loadComrades() {
+      fetch('/api/users').then(r=>r.json()).then(users=>{
+        const div=document.getElementById('allComrades');
+        div.innerHTML='';
+        users.forEach(u=>{
+          div.innerHTML+='<div class="card"><h3>@'+u.username+' — '+(u.rankBadge||'')+' '+u.rank+(u.suspended?' 🚫 SUSPENDED':'')+'</h3><p>'+u.faculty+' · '+u.year+'</p><p>Reviews: '+u.reviews+' · Joined: '+u.joinDate+'</p><p>Premium: '+(u.premium?'✅ Active':'❌ Inactive')+'</p>'+(u.suspended?'<p style="color:#e63946">Reason: '+(u.suspendReason||'N/A')+'</p>':'')+'<div style="margin-top:10px"><button class="btn-reject" onclick="suspendDirect(\''+u.username+'\')">🚫 Suspend</button></div></div>';
+        });
+      });
+    }
+
+    function suspendDirect(username) {
+      const reason=prompt('Reason for suspending '+username+'?');
+      if(!reason)return;
+      fetch('/api/users/suspend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,reason})})
+        .then(r=>r.json()).then(data=>{alert(data.message||data.error);loadComrades();});
+    }
+
+    function changePassword() {
+      const currentPassword=document.getElementById('currentPass').value;
+      const newPassword=document.getElementById('newPass').value;
+      const confirmPassword=document.getElementById('confirmPass').value;
+      const msg=document.getElementById('passMsg');
+      if(!currentPassword||!newPassword||!confirmPassword){msg.style.color='#e63946';msg.textContent='Please fill in all fields.';return;}
+      if(newPassword!==confirmPassword){msg.style.color='#e63946';msg.textContent='New passwords do not match.';return;}
+      if(newPassword.length<6){msg.style.color='#e63946';msg.textContent='Password must be at least 6 characters.';return;}
+      fetch('/api/users/admin/changepassword',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({currentPassword,newPassword})})
+        .then(r=>r.json()).then(data=>{
+          if(data.error){msg.style.color='#e63946';msg.textContent='❌ '+data.error;}
+          else{ADMIN_PASSWORD=newPassword;msg.style.color='#2a9d8f';msg.textContent='✅ '+data.message;document.getElementById('currentPass').value='';document.getElementById('newPass').value='';document.getElementById('confirmPass').value='';}
+        });
+    }
+  </script>
+</body>
+</html>

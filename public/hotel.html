@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DineCheck — Hotel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; color: #333; }
+    header { background: #e63946; padding: 20px; text-align: center; color: white; }
+    header h1 { font-size: 2rem; }
+    header p { font-size: 0.9rem; opacity: 0.85; }
+    .back-btn { display: inline-block; margin: 20px; background: #e63946; color: white; border: none; padding: 8px 18px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; text-decoration: none; }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 20px 40px; }
+    .hotel-hero { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .hotel-hero h2 { color: #e63946; font-size: 1.8rem; }
+    .hotel-hero p { color: #666; margin-top: 6px; }
+    .avg-score { font-size: 2rem; font-weight: bold; color: #f4a261; margin-top: 10px; }
+    .section { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .section h3 { font-size: 1.1rem; margin-bottom: 15px; border-bottom: 2px solid #f5f5f5; padding-bottom: 8px; }
+    .rating-item { background: #f9f9f9; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px; font-size: 0.9rem; }
+    .rating-item strong { color: #e63946; }
+    .poll-item { margin-bottom: 15px; }
+    .poll-item p { margin-bottom: 6px; font-weight: bold; }
+    .poll-bar { background: #eee; border-radius: 10px; height: 12px; margin-bottom: 6px; }
+    .poll-bar-fill { background: #2a9d8f; height: 12px; border-radius: 10px; }
+    .poll-votes { font-size: 0.85rem; color: #666; }
+    .vote-btns { margin-top: 6px; }
+    .vote-btns button { border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin-right: 6px; font-size: 0.85rem; }
+    .yes-btn { background: #2a9d8f; color: white; }
+    .no-btn { background: #e63946; color: white; }
+    .form-box { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .form-box h3 { margin-bottom: 15px; }
+    .form-box input, .form-box select { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+    .form-box button { background: #e63946; color: white; border: none; padding: 12px 25px; border-radius: 6px; font-size: 1rem; cursor: pointer; }
+    .no-results { color: #999; font-size: 0.9rem; }
+    .mood-card { background: #f5f5f5; border: 2px solid #ddd; border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 0.9rem; transition: all 0.15s; }
+    .mood-card:hover { border-color: #e63946; }
+    .mood-card.selected { background: #e63946; color: white; border-color: #e63946; }
+    .mood-label { font-weight: bold; margin-bottom: 8px; margin-top: 4px; font-size: 0.95rem; }
+    .mood-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .speed-item { background: #f9f9f9; border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; }
+    .spec-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+    .spec-row:last-child { border-bottom: none; }
+    .spec-label { font-size: 0.9rem; font-weight: bold; width: 140px; }
+    .spec-options { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .spec-btn { background: #f5f5f5; border: 2px solid #ddd; border-radius: 8px; padding: 5px 10px; cursor: pointer; font-size: 0.8rem; transition: all 0.15s; }
+    .spec-btn:hover { border-color: #e63946; }
+    .spec-btn.selected { background: #e63946; color: white; border-color: #e63946; }
+    .star-btn { font-size: 1.2rem; background: none; border: none; cursor: pointer; padding: 2px; }
+    .star-btn.selected { color: #f4a261; }
+    .star-btn:not(.selected) { color: #ddd; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🍛 DineCheck</h1>
+    <p>Community Food Intelligence · Egerton University</p>
+  </header>
+  <a class="back-btn" href="/">← Back to Home</a>
+  <div class="container">
+    <div class="hotel-hero" id="hotelHero">Loading...</div>
+
+    <div class="section">
+      <h3>🗳️ Community Polls</h3>
+      <div id="pollsSection"></div>
+    </div>
+
+    <div class="form-box">
+      <h3>📸 Upload a Photo</h3>
+      <input type="file" id="photoInput" accept="image/*" style="margin-bottom:12px" />
+      <input type="text" id="photoUsername" placeholder="Your comrade handle e.g. @njenga_spoon" />
+      <button onclick="uploadPhoto()">Upload Photo</button>
+      <p id="photoMsg" style="margin-top:10px;color:#2a9d8f"></p>
+    </div>
+
+    <div class="section">
+      <h3>📸 Photos</h3>
+      <div id="photosSection" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+    </div>
+
+    <div class="form-box">
+      <h3>⏱️ Service Speed Timer</h3>
+      <p style="color:#666;margin-bottom:15px;font-size:0.9rem">Tap Start when seated. Tap Food Here when your meal arrives.</p>
+      <div style="text-align:center">
+        <div id="timerDisplay" style="font-size:3rem;font-weight:bold;color:#e63946;margin-bottom:15px">00:00</div>
+        <div id="timerStatus" style="color:#aaa;font-size:0.9rem;margin-bottom:15px">Press Start when seated</div>
+        <button id="timerBtn" onclick="handleTimer()" style="background:#e63946;color:white;border:none;padding:14px 30px;border-radius:30px;font-size:1.1rem;cursor:pointer;width:100%">▶ Start Timer</button>
+        <div id="timerResult" style="margin-top:15px;display:none">
+          <p style="color:#2a9d8f;font-weight:bold;font-size:1rem" id="timerResultText"></p>
+          <button onclick="saveSpeed()" style="margin-top:10px;background:#2a9d8f;color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-size:0.95rem">💾 Save this wait time</button>
+        </div>
+      </div>
+      <div id="speedHistory" style="margin-top:20px"></div>
+    </div>
+
+    <div class="form-box">
+      <h3>⭐ Rate a Meal</h3>
+      <input type="text" id="mealInput" placeholder="Which meal? e.g. Chapo" />
+      <select id="scoreInput">
+        <option value="">Overall Score (1-10)</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+      </select>
+      <p class="mood-label">📋 10-Spec Scorecard</p>
+      <div id="specScorecard">
+        <div class="spec-row">
+          <span class="spec-label">⭐ Taste</span>
+          <div class="spec-options" id="spec-taste">
+            <button class="star-btn" onclick="setSpec('taste',1,this)">★</button>
+            <button class="star-btn" onclick="setSpec('taste',2,this)">★</button>
+            <button class="star-btn" onclick="setSpec('taste',3,this)">★</button>
+            <button class="star-btn" onclick="setSpec('taste',4,this)">★</button>
+            <button class="star-btn" onclick="setSpec('taste',5,this)">★</button>
+          </div>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">🎨 Presentation</span>
+          <div class="spec-options" id="spec-presentation">
+            <button class="spec-btn" onclick="setSpecBtn('presentation','poor',this)">🤢</button>
+            <button class="spec-btn" onclick="setSpecBtn('presentation','ok',this)">😐</button>
+            <button class="spec-btn" onclick="setSpecBtn('presentation','good',this)">😊</button>
+            <button class="spec-btn" onclick="setSpecBtn('presentation','great',this)">😍</button>
+            <button class="spec-btn" onclick="setSpecBtn('presentation','wow',this)">🤩</button>
+          </div>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">🍽️ Portion Size</span>
+          <div class="spec-options" id="spec-portion">
+            <button class="spec-btn" onclick="setSpecBtn('portion','small',this)">Small</button>
+            <button class="spec-btn" onclick="setSpecBtn('portion','fair',this)">Fair</button>
+            <button class="spec-btn" onclick="setSpecBtn('portion','generous',this)">Generous</button>
+          </div>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">🌡️ Temperature</span>
+          <div class="spec-options" id="spec-temp">
+            <button class="spec-btn" onclick="setSpecBtn('temp','cold',this)">Cold</button>
+            <button class="spec-btn" onclick="setSpecBtn('temp','warm',this)">Warm</button>
+            <button class="spec-btn" onclick="setSpecBtn('temp','perfect',this)">Perfect</button>
+            <button class="spec-btn" onclick="setSpecBtn('temp','toohot',this)">Too Hot</button>
+          </div>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">🌿 Freshness</span>
+          <div class="spec-options" id="spec-freshness">
+            <button class="star-btn" onclick="setSpec('freshness',1,this)">★</button>
+            <button class="star-btn" onclick="setSpec('freshness',2,this)">★</button>
+            <button class="star-btn" onclick="setSpec('freshness',3,this)">★</button>
+            <button class="star-btn" onclick="setSpec('freshness',4,this)">★</button>
+            <button class="star-btn" onclick="setSpec('freshness',5,this)">★</button>
+          </div>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">👃 Aroma</span>
+          <div class="spec-options" id="spec-aroma">
+            <button class="spec-btn" onclick="setSpecBtn('aroma','awful',this)">😷</button>
+            <button class="spec-btn" onclick="setSpecBtn('aroma','neutral',this)">😶</button>
+            <button class="spec-btn" onclick="setSpecBtn('aroma','good',this)">😌</button>
+            <button class="spec-btn" onclick="setSpecBtn('aroma','amazing',this)">😍</button>
+          </div>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">🥢 Texture</span>
+          <div class="spec-options" id="spec-texture">
+            <button class="star-btn" onclick="setSpec('texture',1,this)">★</button>
+            <button class="star-btn" onclick="setSpec('texture',2,this)">★</button>
+            <button class="star-btn" onclick="setSpec('texture',3,this)">★</button>
+            <button class="star-btn" onclick="setSpec('texture',4,this)">★</button>
+            <button class="star-btn" onclick="setSpec('texture',5,this)">★</button>
+          </div>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">💰 Value</span>
+          <div class="spec-options" id="spec-value">
+            <button class="spec-btn" onclick="setSpecBtn('value','overpriced',this)">👎 Overpriced</button>
+            <button class="spec-btn" onclick="setSpecBtn('value','fair',this)">👍 Fair</button>
+            <button class="spec-btn" onclick="setSpecBtn('value','steal',this)">🔥 Steal</button>
+          </div>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">⚡ Plating</span>
+          <div class="spec-options" id="spec-plating">
+            <button class="spec-btn" onclick="setSpecBtn('plating','bad',this)">🤢</button>
+            <button class="spec-btn" onclick="setSpecBtn('plating','ok',this)">😐</button>
+            <button class="spec-btn" onclick="setSpecBtn('plating','nice',this)">😊</button>
+            <button class="spec-btn" onclick="setSpecBtn('plating','beautiful',this)">😍</button>
+          </div>
+        </div>
+      </div>
+      <p class="mood-label" style="margin-top:16px">🎭 Overall Look</p>
+      <div class="mood-row" id="moodCards">
+        <div class="mood-card" onclick="selectMood(this)" data-mood="prison">🤢 Prison food</div>
+        <div class="mood-card" onclick="selectMood(this)" data-mood="functional">😐 Functional</div>
+        <div class="mood-card" onclick="selectMood(this)" data-mood="decent">😊 Decent plate</div>
+        <div class="mood-card" onclick="selectMood(this)" data-mood="instagram">😍 Instagram-worthy</div>
+        <div class="mood-card" onclick="selectMood(this)" data-mood="outstanding">🤩 Chef kiss</div>
+      </div>
+      <input type="text" id="commentInput" placeholder="Comment (optional)" />
+      <input type="text" id="usernameInput" placeholder="Your comrade handle e.g. @njenga_spoon" />
+      <button onclick="submitRating()">Submit Rating</button>
+    </div>
+
+    <div class="section">
+      <h3>📝 All Ratings</h3>
+      <div id="ratingsSection"></div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const hotelId = parseInt(params.get('id'));
+    let selectedMood = null;
+    let timerInterval = null;
+    let timerStart = null;
+    let timerRunning = false;
+    let lastWaitSeconds = null;
+    let specs = {};
+
+    function setSpec(name, value, btn) {
+      document.getElementById('spec-' + name).querySelectorAll('.star-btn').forEach((s, i) => {
+        s.classList.toggle('selected', i < value);
+      });
+      specs[name] = value;
+    }
+
+    function setSpecBtn(name, value, btn) {
+      document.getElementById('spec-' + name).querySelectorAll('.spec-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      specs[name] = value;
+    }
+
+    function selectMood(el) {
+      document.querySelectorAll('#moodCards .mood-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedMood = el.dataset.mood;
+    }
+
+    function handleTimer() {
+      if (!timerRunning) {
+        timerStart = Date.now();
+        timerRunning = true;
+        document.getElementById('timerBtn').textContent = '🍽️ Food Here!';
+        document.getElementById('timerBtn').style.background = '#2a9d8f';
+        document.getElementById('timerStatus').textContent = 'Timer running — tap when food arrives';
+        document.getElementById('timerResult').style.display = 'none';
+        timerInterval = setInterval(() => {
+          const elapsed = Math.floor((Date.now() - timerStart) / 1000);
+          const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+          const secs = (elapsed % 60).toString().padStart(2, '0');
+          document.getElementById('timerDisplay').textContent = mins + ':' + secs;
+        }, 1000);
+      } else {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        lastWaitSeconds = Math.floor((Date.now() - timerStart) / 1000);
+        const mins = Math.floor(lastWaitSeconds / 60);
+        const secs = lastWaitSeconds % 60;
+        let verdict = lastWaitSeconds < 300 ? '⚡ Fast service!' : lastWaitSeconds < 600 ? '👍 Reasonable wait' : lastWaitSeconds < 900 ? '😐 Slow today' : '🐌 Very slow!';
+        document.getElementById('timerBtn').textContent = '▶ Start Again';
+        document.getElementById('timerBtn').style.background = '#e63946';
+        document.getElementById('timerStatus').textContent = 'Done!';
+        document.getElementById('timerResultText').textContent = verdict + ' — ' + mins + 'm ' + secs + 's wait';
+        document.getElementById('timerResult').style.display = 'block';
+      }
+    }
+
+    function saveSpeed() {
+      if (!lastWaitSeconds) return;
+      fetch('/api/hotels/' + hotelId + '/speed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ waitSeconds: lastWaitSeconds, date: new Date().toISOString().split('T')[0] })
+      }).then(() => {
+        document.getElementById('timerResult').style.display = 'none';
+        document.getElementById('timerDisplay').textContent = '00:00';
+        document.getElementById('timerStatus').textContent = 'Saved! Press Start when seated';
+        lastWaitSeconds = null;
+        loadSpeedHistory();
+      });
+    }
+
+    function loadSpeedHistory() {
+      fetch('/api/hotels')
+        .then(res => res.json())
+        .then(hotels => {
+          const hotel = hotels.find(h => h.id === hotelId);
+          const div = document.getElementById('speedHistory');
+          if (!hotel || !hotel.speeds || hotel.speeds.length === 0) {
+            div.innerHTML = '<p style="color:#aaa;font-size:0.85rem;text-align:center">No speed data yet.</p>';
+            return;
+          }
+          const avg = Math.floor(hotel.speeds.reduce((s, r) => s + r.waitSeconds, 0) / hotel.speeds.length);
+          div.innerHTML = '<p style="color:#2a9d8f;font-weight:bold;margin-bottom:10px;text-align:center">⏱️ Avg wait: ' + Math.floor(avg/60) + 'm ' + (avg%60) + 's from ' + hotel.speeds.length + ' report(s)</p>';
+          hotel.speeds.slice().reverse().slice(0, 5).forEach(s => {
+            div.innerHTML += '<div class="speed-item"><span>' + s.date + '</span><span>' + Math.floor(s.waitSeconds/60) + 'm ' + (s.waitSeconds%60) + 's</span></div>';
+          });
+        });
+    }
+
+    function avgRating(ratings) {
+      if (!ratings || ratings.length === 0) return null;
+      return (ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length).toFixed(1);
+    }
+
+    function moodLabel(mood) {
+      const map = { prison: '🤢 Prison food', functional: '😐 Functional', decent: '😊 Decent plate', instagram: '😍 Instagram-worthy', outstanding: '🤩 Chef kiss' };
+      return map[mood] || '';
+    }
+
+    function freshnessInfo(dateStr) {
+      const daysOld = Math.floor((new Date() - new Date(dateStr)) / (1000 * 60 * 60 * 24));
+      if (daysOld >= 14) return { border: '3px solid #ccc', opacity: '0.4', label: '<span style="background:#ccc;color:#666;padding:2px 8px;border-radius:10px;font-size:0.7rem">⚫ Stale</span>', days: daysOld };
+      if (daysOld >= 7) return { border: '3px solid #f4a261', opacity: '0.7', label: '<span style="background:#f4a261;color:white;padding:2px 8px;border-radius:10px;font-size:0.7rem">🟡 Aging</span>', days: daysOld };
+      return { border: '3px solid #2a9d8f', opacity: '1', label: '<span style="background:#2a9d8f;color:white;padding:2px 8px;border-radius:10px;font-size:0.7rem">🟢 Fresh</span>', days: daysOld };
+    }
+
+    function loadHotel() {
+      fetch('/api/hotels')
+        .then(res => res.json())
+        .then(hotels => {
+          const hotel = hotels.find(h => h.id === hotelId);
+          if (!hotel) { document.getElementById('hotelHero').innerHTML = 'Hotel not found.'; return; }
+          document.title = 'DineCheck — ' + hotel.name;
+          const avg = avgRating(hotel.ratings);
+          document.getElementById('hotelHero').innerHTML =
+            '<h2>🏨 ' + hotel.name + '</h2>' +
+            '<p>📍 ' + hotel.location + '</p>' +
+            '<p>🍽️ ' + hotel.meals + '</p>' +
+            (avg ? '<div class="avg-score">⭐ ' + avg + '/10</div><p style="color:#aaa;font-size:0.85rem">' + hotel.ratings.length + ' rating(s)</p>' : '<p style="color:#aaa;margin-top:6px">No ratings yet.</p>');
+
+          const ratingsDiv = document.getElementById('ratingsSection');
+          if (!hotel || hotel.ratings.length === 0) {
+            ratingsDiv.innerHTML = '<p class="no-results">No ratings yet.</p>';
+            return;
+          }
+          ratingsDiv.innerHTML = '';
+          hotel.ratings.slice().reverse().forEach(r => {
+            let specHTML = '';
+            if (r.specs && Object.keys(r.specs).length > 0) {
+              specHTML = '<br><span style="color:#457b9d;font-size:0.8rem">📋 ' + Object.entries(r.specs).map(([k,v]) => k + ': ' + v).join(' · ') + '</span>';
+            }
+            ratingsDiv.innerHTML +=
+              '<div class="rating-item"><strong>' + r.meal + '</strong> — ' + r.score + '/10' +
+              (r.username ? ' <span style="color:#aaa">by ' + r.username + '</span>' : '') +
+              (r.mood ? '<br><span style="color:#888">Look: ' + moodLabel(r.mood) + '</span>' : '') +
+              specHTML +
+              (r.comment ? '<br><span style="color:#555">"' + r.comment + '"</span>' : '') +
+              '<br><span style="color:#aaa">' + r.date + '</span></div>';
+          });
+        });
+    }
+
+    function loadPhotos() {
+      fetch('/api/hotels')
+        .then(res => res.json())
+        .then(hotels => {
+          const hotel = hotels.find(h => h.id === hotelId);
+          const div = document.getElementById('photosSection');
+          if (!hotel || !hotel.photos || hotel.photos.length === 0) {
+            div.innerHTML = '<p style="color:#aaa;font-size:0.85rem">No photos yet.</p>';
+            return;
+          }
+          div.innerHTML = '';
+          hotel.photos.slice().reverse().forEach(p => {
+            const f = freshnessInfo(p.date);
+            div.innerHTML += '<div style="text-align:center"><img src="' + p.url + '" style="width:150px;height:120px;object-fit:cover;border-radius:8px;border:' + f.border + ';opacity:' + f.opacity + '" /><div style="margin-top:4px">' + f.label + '</div><p style="font-size:0.75rem;color:#aaa;margin-top:4px">' + p.uploadedBy + ' · ' + f.days + 'd ago</p></div>';
+          });
+        });
+    }
+
+    function uploadPhoto() {
+      const fileInput = document.getElementById('photoInput');
+      const username = document.getElementById('photoUsername').value;
+      if (!fileInput.files[0]) { alert('Please select a photo'); return; }
+      const formData = new FormData();
+      formData.append('photo', fileInput.files[0]);
+      formData.append('username', username);
+      fetch('/api/hotels/' + hotelId + '/photo', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(() => {
+          document.getElementById('photoMsg').textContent = '✅ Photo uploaded!';
+          document.getElementById('photoInput').value = '';
+          loadPhotos();
+        });
+    }
+
+    function loadPolls() {
+      fetch('/api/polls/' + hotelId)
+        .then(res => res.json())
+        .then(votes => {
+          fetch('/api/polls/questions')
+            .then(res => res.json())
+            .then(questions => {
+              const div = document.getElementById('pollsSection');
+              div.innerHTML = '';
+              questions.forEach(q => {
+                const v = votes.find(p => p.questionId === q.id) || { yes: 0, no: 0 };
+                const total = v.yes + v.no;
+                const pct = total > 0 ? Math.round((v.yes / total) * 100) : 0;
+                div.innerHTML += '<div class="poll-item"><p>' + q.question + '</p><div class="poll-bar"><div class="poll-bar-fill" style="width:' + pct + '%"></div></div><span class="poll-votes">✅ ' + v.yes + ' · ❌ ' + v.no + ' · ' + pct + '% approval</span><div class="vote-btns"><button class="yes-btn" onclick="vote(' + q.id + ',\'yes\')">✅ Yes</button><button class="no-btn" onclick="vote(' + q.id + ',\'no\')">❌ No</button></div></div>';
+              });
+            });
+        });
+    }
+
+    function vote(questionId, v) {
+      fetch('/api/polls/vote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hotelId, questionId, vote: v }) }).then(() => loadPolls());
+    }
+
+    function submitRating() {
+      const meal = document.getElementById('mealInput').value;
+      const score = parseInt(document.getElementById('scoreInput').value);
+      const comment = document.getElementById('commentInput').value;
+      const username = document.getElementById('usernameInput').value;
+      if (!meal || !score) { alert('Please enter a meal and score'); return; }
+      fetch('/api/hotels/' + hotelId + '/rate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meal, score, comment, username, mood: selectedMood, specs })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.rank && username) alert('Rating submitted! Reviews: ' + data.reviews + ' · Rank: ' + data.rankBadge + ' ' + data.rank);
+        document.getElementById('mealInput').value = '';
+        document.getElementById('scoreInput').value = '';
+        document.getElementById('commentInput').value = '';
+        document.getElementById('usernameInput').value = '';
+        document.querySelectorAll('.mood-card, .spec-btn').forEach(c => c.classList.remove('selected'));
+        document.querySelectorAll('.star-btn').forEach(c => c.classList.remove('selected'));
+        selectedMood = null;
+        specs = {};
+        loadHotel();
+      });
+    }
+
+    loadHotel();
+    loadPolls();
+    loadPhotos();
+    loadSpeedHistory();
+  </script>
+</body>
+</html>

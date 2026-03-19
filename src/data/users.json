@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "regNumber": "EN100/12345/2022",
+    "email": "john@student.egerton.ac.ke",
+    "fullName": "John Mwangi",
+    "faculty": "School of Engineering",
+    "year": "1st Year",
+    "username": " @njenga_spoon",
+    "rank": "Fork Regular",
+    "premium": true,
+    "trialExpiry": "2026-03-23",
+    "joinDate": "2026-03-16",
+    "reviews": 3,
+    "rankBadge": "🍴",
+    "premiumExpiry": "2026-03-23"
+  }
+]

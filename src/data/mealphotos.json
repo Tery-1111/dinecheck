@@ -1,0 +1,275 @@
+[
+  {
+    "mealId": 1,
+    "mealName": "Chapo",
+    "hotelId": null,
+    "url": "/uploads/meals/1773782155081-download chapo.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 2,
+    "mealName": "Beans",
+    "hotelId": null,
+    "url": "/uploads/meals/1773782241792-beans.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 3,
+    "mealName": "Beef",
+    "hotelId": null,
+    "url": "/uploads/meals/1773782404892-beef.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 4,
+    "mealName": "Pilau",
+    "hotelId": null,
+    "url": "/uploads/meals/1773782471577-pilau.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 5,
+    "mealName": "Samaki",
+    "hotelId": null,
+    "url": "/uploads/meals/1773782579181-samaki.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 6,
+    "mealName": "Kuku",
+    "hotelId": null,
+    "url": "/uploads/meals/1773782709748-kuku.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 8,
+    "mealName": "Chips",
+    "hotelId": null,
+    "url": "/uploads/meals/1773783025125-images (1).jpeg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 9,
+    "mealName": "Uji",
+    "hotelId": null,
+    "url": "/uploads/meals/1773783138242-uji.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 10,
+    "mealName": "Githeri",
+    "hotelId": null,
+    "url": "/uploads/meals/1773783236031-githe.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 11,
+    "mealName": "Matumbo",
+    "hotelId": null,
+    "url": "/uploads/meals/1773783392035-marumbo.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 12,
+    "mealName": "Ugali",
+    "hotelId": null,
+    "url": "/uploads/meals/1773783519692-ugali_main.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 13,
+    "mealName": "Rice Plain",
+    "hotelId": null,
+    "url": "/uploads/meals/1773783696233-ruce.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 14,
+    "mealName": "Rice Special",
+    "hotelId": null,
+    "url": "/uploads/meals/1773783880671-rsp.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 15,
+    "mealName": "Rice Matumbo",
+    "hotelId": null,
+    "url": "/uploads/meals/1773784004461-Priscillas-Instagram-photo_-Matumbo-wet-fry-andâ¦-1.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 16,
+    "mealName": "Rice Mayai",
+    "hotelId": null,
+    "url": "/uploads/meals/1773784165730-rmayi.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 17,
+    "mealName": "Ugali Nyama",
+    "hotelId": null,
+    "url": "/uploads/meals/1773784298126-downloadu gal nyam.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 18,
+    "mealName": "Ugali Matumbo",
+    "hotelId": null,
+    "url": "/uploads/meals/1773784379015-ugal mat.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 20,
+    "mealName": "Ugali Beans",
+    "hotelId": null,
+    "url": "/uploads/meals/1773784469005-ugal bean.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 21,
+    "mealName": "Ugali Sukuma",
+    "hotelId": null,
+    "url": "/uploads/meals/1773784547466-ugasku.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 22,
+    "mealName": "Ugali Omena",
+    "hotelId": null,
+    "url": "/uploads/meals/1773784615238-ugaom.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 23,
+    "mealName": "Mukimo",
+    "hotelId": null,
+    "url": "/uploads/meals/1773784691942-mokimo.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 24,
+    "mealName": "Eggs",
+    "hotelId": null,
+    "url": "/uploads/meals/1773785026085-download.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 25,
+    "mealName": "Bamba",
+    "hotelId": null,
+    "url": "/uploads/meals/1773785146943-bamba.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 26,
+    "mealName": "Mandazi",
+    "hotelId": null,
+    "url": "/uploads/meals/1773785205092-andaz.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 27,
+    "mealName": "Bhajia",
+    "hotelId": null,
+    "url": "/uploads/meals/1773785225399-images.jpeg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 28,
+    "mealName": "Smokies",
+    "hotelId": null,
+    "url": "/uploads/meals/1773785292164-download (1).jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 29,
+    "mealName": "Samosa",
+    "hotelId": null,
+    "url": "/uploads/meals/1773785368811-mosa.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 37,
+    "mealName": "Waru Karanga",
+    "hotelId": null,
+    "url": "/uploads/meals/1773785551054-warkarng.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 39,
+    "mealName": "Mutura",
+    "hotelId": null,
+    "url": "/uploads/meals/1773785656136-tura.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 43,
+    "mealName": "Mala",
+    "hotelId": null,
+    "url": "/uploads/meals/1773785705855-ursik.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 45,
+    "mealName": "Soda",
+    "hotelId": null,
+    "url": "/uploads/meals/1773785780701-sda.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 47,
+    "mealName": "Chai",
+    "hotelId": null,
+    "url": "/uploads/meals/1773785840045-ai.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 42,
+    "mealName": "Avocado",
+    "hotelId": null,
+    "url": "/uploads/meals/1773785916045-ov.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 40,
+    "mealName": "Tea",
+    "hotelId": null,
+    "url": "/uploads/meals/1773785933449-ai.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 32,
+    "mealName": "Smocha",
+    "hotelId": null,
+    "url": "/uploads/meals/1773786017800-moca.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 33,
+    "mealName": "Chapo Beans",
+    "hotelId": null,
+    "url": "/uploads/meals/1773786112335-download (2).jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 34,
+    "mealName": "Chapo Ndengu",
+    "hotelId": null,
+    "url": "/uploads/meals/1773786186535-c nd.jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 35,
+    "mealName": "Rice Beans",
+    "hotelId": null,
+    "url": "/uploads/meals/1773786238750-download (3).jpg",
+    "date": "2026-03-17"
+  },
+  {
+    "mealId": 36,
+    "mealName": "Rice Ndengu",
+    "hotelId": null,
+    "url": "/uploads/meals/1773786300768-download (4).jpg",
+    "date": "2026-03-17"
+  }
+]
