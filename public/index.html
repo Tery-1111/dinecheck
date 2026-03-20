@@ -238,7 +238,7 @@
   <!-- PROFILE -->
   <div class="page" id="page-profile"><div id="profileContent"></div></div>
 
-  <!-- ADMIN ACCESS MODAL -->
+  <!-- ADMIN MODAL -->
   <div class="admin-modal" id="adminModal">
     <div class="admin-modal-box">
       <h3>🔐 Admin Access</h3>
@@ -350,10 +350,10 @@
         div.innerHTML='<p style="margin-bottom:10px;color:#8e8e93;font-size:0.8rem">'+results.length+' hotel(s) serving <strong style="color:#1c1c1e">'+query+'</strong></p>';
         results.forEach(hotel=>{
           const a=avg(hotel.ratings);
-          const photo=getMealPhoto(query,hotel.id);
+          const photo=getMealPhoto(query,hotel._id);
           const prices=hotel.meals.match(/KSh\s*(\d+)/g);
           const priceStr=prices?prices[0].replace('KSh','KES').trim():'';
-          div.innerHTML+='<div class="res-card" onclick="window.location.href=\'/hotel.html?id='+hotel.id+'\'">'+(photo?'<img class="rc-img" src="'+photo+'" />':'<div class="rc-no-img">🍽️</div>')+'<div class="rc-info"><div class="rc-meal">'+query+'</div><div class="rc-hotel">'+hotel.name+' · 📍 '+hotel.location+'</div>'+(a?'<div class="rc-stars"><span>'+starsHTML(parseFloat(a))+'</span><span style="color:#8e8e93;font-size:0.7rem">'+a+'/10</span>'+(parseFloat(a)>=7.5?'<span style="font-size:0.66rem;background:#1c1c1e;color:white;padding:1px 5px;border-radius:4px">'+Math.round(parseFloat(a)*10)+'% co</span>':'')+'</div>':'')+'<div class="rc-badges">'+(priceStr?'<span class="price-badge">'+priceStr+'</span>':'')+(a&&parseFloat(a)>=7.5?'<span class="consist-badge">Consistent</span>':'')+'</div></div></div>';
+          div.innerHTML+='<div class="res-card" onclick="window.location.href=\'/hotel.html?id='+hotel._id+'\'">'+(photo?'<img class="rc-img" src="'+photo+'" />':'<div class="rc-no-img">🍽️</div>')+'<div class="rc-info"><div class="rc-meal">'+query+'</div><div class="rc-hotel">'+hotel.name+' · 📍 '+hotel.location+'</div>'+(a?'<div class="rc-stars"><span>'+starsHTML(parseFloat(a))+'</span><span style="color:#8e8e93;font-size:0.7rem">'+a+'/10</span>'+(parseFloat(a)>=7.5?'<span style="font-size:0.66rem;background:#1c1c1e;color:white;padding:1px 5px;border-radius:4px">'+Math.round(parseFloat(a)*10)+'% co</span>':'')+'</div>':'')+'<div class="rc-badges">'+(priceStr?'<span class="price-badge">'+priceStr+'</span>':'')+(a&&parseFloat(a)>=7.5?'<span class="consist-badge">Consistent</span>':'')+'</div></div></div>';
         });
       });
     }
@@ -372,7 +372,7 @@
           const downvotes=hotel.quickvotes?hotel.quickvotes.filter(v=>v.vote==='down').length:0;
           const lastComment=hotel.ratings.slice().reverse().find(r=>r.comment&&r.comment.trim());
           const moodEmojis=getMoodEmojis(hotel.ratings);
-          div.innerHTML+='<div class="perf-card"><div class="perf-top"><h3>'+medal+' '+hotel.name+'</h3><div class="ploc">📍 '+hotel.location+'</div></div><div class="perf-bar-row"><div class="perf-bar-bg"><div class="perf-bar-fill" style="width:'+(a/10*100)+'%;background:'+color+'"></div></div><span class="score-pill" style="background:'+color+'">'+a+'</span></div>'+(lastComment?'<div class="perf-comment">"'+lastComment.comment+'"</div>':'')+'<div class="perf-footer"><span class="perf-meta">'+hotel.ratings.length+' reviews'+(moodEmojis?' · '+moodEmojis:'')+'</span><button class="qvote-btn qvote-up" onclick="quickVote('+hotel.id+',\'up\')">👍 '+upvotes+'</button><button class="qvote-btn qvote-down" onclick="quickVote('+hotel.id+',\'down\')">👎 '+downvotes+'</button><a href="/hotel.html?id='+hotel.id+'" class="view-btn">View →</a></div></div>';
+          div.innerHTML+='<div class="perf-card"><div class="perf-top"><h3>'+medal+' '+hotel.name+'</h3><div class="ploc">📍 '+hotel.location+'</div></div><div class="perf-bar-row"><div class="perf-bar-bg"><div class="perf-bar-fill" style="width:'+(a/10*100)+'%;background:'+color+'"></div></div><span class="score-pill" style="background:'+color+'">'+a+'</span></div>'+(lastComment?'<div class="perf-comment">"'+lastComment.comment+'"</div>':'')+'<div class="perf-footer"><span class="perf-meta">'+hotel.ratings.length+' reviews'+(moodEmojis?' · '+moodEmojis:'')+'</span><button class="qvote-btn qvote-up" onclick="quickVote(\''+hotel._id+'\',\'up\')">👍 '+upvotes+'</button><button class="qvote-btn qvote-down" onclick="quickVote(\''+hotel._id+'\',\'down\')">👎 '+downvotes+'</button><a href="/hotel.html?id='+hotel._id+'" class="view-btn">View →</a></div></div>';
         });
       });
     }
@@ -391,10 +391,14 @@
     }
 
     function loadComradePosts(){
-      fetch('/api/hotels').then(r=>r.json()).then(hotels=>{
+      Promise.all([
+        fetch('/api/hotels').then(r=>r.json()),
+        fetch('/api/reactions').then(r=>r.json())
+      ]).then(([hotels,reactions])=>{
+        allReactions=reactions;
         const div=document.getElementById('comradePosts');
         const posts=[];
-        hotels.forEach(h=>h.ratings.forEach((r,idx)=>{if(r.username)posts.push({...r,hotelName:h.name,hotelId:h.id,postKey:h.id+'-'+idx});}));
+        hotels.forEach(h=>h.ratings.forEach((r,idx)=>{if(r.username)posts.push({...r,hotelName:h.name,hotelId:h._id,postKey:h._id+'-'+idx});}));
         posts.sort((a,b)=>new Date(b.date)-new Date(a.date));
         if(!posts.length){div.innerHTML='<p class="no-res">No comrade posts yet.</p>';return;}
         div.innerHTML='';
@@ -408,12 +412,15 @@
       });
     }
 
-    function reactPost(key,type){fetch('/api/reactions/'+key+'/react',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type})}).then(r=>r.json()).then(data=>{document.getElementById('up-'+key).textContent=data.up;document.getElementById('down-'+key).textContent=data.down;allReactions[key]=data;});}
+    function reactPost(key,type){fetch('/api/reactions/'+key+'/react',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type})}).then(r=>r.json()).then(data=>{document.getElementById('up-'+key).textContent=data.up;document.getElementById('down-'+key).textContent=data.down;});}
 
     function addComment(key){
       const input=document.getElementById('cinput-'+key);const text=input.value.trim();if(!text)return;
       const handle=currentUser?currentUser.username:prompt('Your comrade handle:');if(!handle)return;
-      fetch('/api/reactions/'+key+'/comment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:handle,text})}).then(r=>r.json()).then(data=>{allReactions[key]=data;document.getElementById('comments-'+key).innerHTML=data.comments.map(c=>'<div class="pc-item"><span class="pc-author">@'+c.username+'</span> '+c.text+(c.date?' <span style="color:#aaa;font-size:0.65rem">'+c.date+'</span>':'')+'</div>').join('');input.value='';});
+      fetch('/api/reactions/'+key+'/comment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:handle,text})}).then(r=>r.json()).then(data=>{
+        document.getElementById('comments-'+key).innerHTML=data.comments.map(c=>'<div class="pc-item"><span class="pc-author">@'+c.username+'</span> '+c.text+(c.date?' <span style="color:#aaa;font-size:0.65rem">'+c.date+'</span>':'')+'</div>').join('');
+        input.value='';
+      });
     }
 
     function loadHotels(){
@@ -421,7 +428,7 @@
         const div=document.getElementById('hotels');if(!div)return;
         if(!hotels.length){div.innerHTML='<p class="no-res">No hotels yet.</p>';return;}
         div.innerHTML='';
-        hotels.forEach(h=>{const a=avg(h.ratings);div.innerHTML+='<div class="hotel-lcard"><div class="hlc-body"><div class="hlc-name">🏨 '+h.name+'</div><div class="hlc-loc">📍 '+h.location+'</div><div class="hlc-meals">'+h.meals+'</div>'+(a?'<div class="hlc-avg">⭐ '+a+'/10 · '+h.ratings.length+' rating(s)</div>':'')+'</div><div class="hlc-actions"><a href="/hotel.html?id='+h.id+'" class="btn-t">View Hotel</a><button class="btn-r" onclick="toggleQR('+h.id+')">Quick Rate</button></div><div class="qr-form" id="qrf-'+h.id+'"><input type="text" id="qmeal-'+h.id+'" placeholder="Which meal?"/><select id="qscore-'+h.id+'"><option value="">Score (1-10)</option>'+[...Array(10)].map((_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'</option>').join('')+'</select><input type="text" id="qcomment-'+h.id+'" placeholder="Comment (optional)"/><input type="text" id="quser-'+h.id+'" placeholder="Your comrade handle" value="'+(currentUser?currentUser.username:'')+'"/><button onclick="submitRating('+h.id+')">Submit Rating</button></div></div>';});
+        hotels.forEach(h=>{const a=avg(h.ratings);div.innerHTML+='<div class="hotel-lcard"><div class="hlc-body"><div class="hlc-name">🏨 '+h.name+'</div><div class="hlc-loc">📍 '+h.location+'</div><div class="hlc-meals">'+h.meals+'</div>'+(a?'<div class="hlc-avg">⭐ '+a+'/10 · '+h.ratings.length+' rating(s)</div>':'')+'</div><div class="hlc-actions"><a href="/hotel.html?id='+h._id+'" class="btn-t">View Hotel</a><button class="btn-r" onclick="toggleQR(\''+h._id+'\')">Quick Rate</button></div><div class="qr-form" id="qrf-'+h._id+'"><input type="text" id="qmeal-'+h._id+'" placeholder="Which meal?"/><select id="qscore-'+h._id+'"><option value="">Score (1-10)</option>'+[...Array(10)].map((_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'</option>').join('')+'</select><input type="text" id="qcomment-'+h._id+'" placeholder="Comment (optional)"/><input type="text" id="quser-'+h._id+'" placeholder="Your comrade handle" value="'+(currentUser?currentUser.username:'')+'"/><button onclick="submitRating(\''+h._id+'\')">Submit Rating</button></div></div>';});
       });
     }
 
@@ -439,14 +446,14 @@
       fetch('/api/hotels',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,location,meals})}).then(()=>{document.getElementById('hotelName').value='';document.getElementById('hotelLocation').value='';document.getElementById('hotelMeals').value='';loadHotels();loadHotelPerformance();loadPriceChart();});
     }
 
-    function initPolls(){fetch('/api/hotels').then(r=>r.json()).then(hotels=>{const s=document.getElementById('pollHotelSelect');s.innerHTML='<option value="">-- Select a Hotel --</option>';hotels.forEach(h=>{s.innerHTML+='<option value="'+h.id+'">'+h.name+'</option>';});});}
+    function initPolls(){fetch('/api/hotels').then(r=>r.json()).then(hotels=>{const s=document.getElementById('pollHotelSelect');s.innerHTML='<option value="">-- Select a Hotel --</option>';hotels.forEach(h=>{s.innerHTML+='<option value="'+h._id+'">'+h.name+'</option>';});});}
 
     function loadPolls(){
       const hotelId=document.getElementById('pollHotelSelect').value;if(!hotelId)return;
-      fetch('/api/polls/'+hotelId).then(r=>r.json()).then(votes=>{fetch('/api/polls/questions').then(r=>r.json()).then(questions=>{const div=document.getElementById('pollsContainer');div.innerHTML='';questions.forEach(q=>{const v=votes.find(p=>p.questionId===q.id)||{yes:0,no:0};const total=v.yes+v.no;const pct=total>0?Math.round((v.yes/total)*100):0;div.innerHTML+='<div class="poll-card"><div class="poll-q">'+q.question+'</div><div class="pbar-bg"><div class="pbar-fill" style="width:'+pct+'%"></div></div><div class="pvotes">✅ '+v.yes+' · ❌ '+v.no+' · '+pct+'% approval</div><div class="pbtns"><button class="yes-btn" onclick="vote('+hotelId+','+q.id+',\'yes\')">✅ Yes</button><button class="no-btn" onclick="vote('+hotelId+','+q.id+',\'no\')">❌ No</button></div></div>';});});});
+      fetch('/api/polls/'+hotelId).then(r=>r.json()).then(votes=>{fetch('/api/polls/questions').then(r=>r.json()).then(questions=>{const div=document.getElementById('pollsContainer');div.innerHTML='';questions.forEach(q=>{const v=votes.find(p=>p.questionId===q.id)||{yes:0,no:0};const total=v.yes+v.no;const pct=total>0?Math.round((v.yes/total)*100):0;div.innerHTML+='<div class="poll-card"><div class="poll-q">'+q.question+'</div><div class="pbar-bg"><div class="pbar-fill" style="width:'+pct+'%"></div></div><div class="pvotes">✅ '+v.yes+' · ❌ '+v.no+' · '+pct+'% approval</div><div class="pbtns"><button class="yes-btn" onclick="vote(\''+hotelId+'\','+q.id+',\'yes\')">✅ Yes</button><button class="no-btn" onclick="vote(\''+hotelId+'\','+q.id+',\'no\')">❌ No</button></div></div>';});});});
     }
 
-    function vote(hotelId,questionId,v){fetch('/api/polls/vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotelId:parseInt(hotelId),questionId,vote:v})}).then(()=>loadPolls());}
+    function vote(hotelId,questionId,v){fetch('/api/polls/vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotelId,questionId,vote:v})}).then(()=>loadPolls());}
 
     function loadAlerts(filter){fetch('/api/alerts').then(r=>r.json()).then(alerts=>{allAlerts=alerts;renderAlerts(filter);});}
 
