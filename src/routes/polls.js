@@ -1,9 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
-
-const pollsPath = path.join(__dirname, '../data/polls.json');
+const Poll = require('../models/Poll');
 
 const POLL_QUESTIONS = [
   { id: 1, question: '🧼 Good Hygiene?' },
@@ -17,41 +14,45 @@ router.get('/questions', (req, res) => {
   res.json(POLL_QUESTIONS);
 });
 
-router.get('/:hotelId', (req, res) => {
-  const polls = JSON.parse(fs.readFileSync(pollsPath));
-  const hotelPolls = polls.filter(p => p.hotelId === parseInt(req.params.hotelId));
-  res.json(hotelPolls);
+router.get('/:hotelId', async (req, res) => {
+  try {
+    const polls = await Poll.find({ hotelId: req.params.hotelId });
+    res.json(polls);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-router.post('/vote', (req, res) => {
+router.post('/vote', async (req, res) => {
   const { hotelId, questionId, vote } = req.body;
-  const polls = JSON.parse(fs.readFileSync(pollsPath));
-
-  let poll = polls.find(p => p.hotelId === hotelId && p.questionId === questionId);
-
-  if (!poll) {
-    poll = { hotelId, questionId, yes: 0, no: 0 };
-    polls.push(poll);
+  try {
+    let poll = await Poll.findOne({ hotelId, questionId });
+    if (!poll) {
+      poll = new Poll({ hotelId, questionId, yes: 0, no: 0 });
+    }
+    if (vote === 'yes') poll.yes++;
+    else poll.no++;
+    await poll.save();
+    res.json(poll);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  if (vote === 'yes') poll.yes++;
-  else poll.no++;
-
-  fs.writeFileSync(pollsPath, JSON.stringify(polls, null, 2));
-  res.json(poll);
 });
 
-router.post('/adjust', (req, res) => {
+router.post('/adjust', async (req, res) => {
   const { hotelId, questionId, yes, no } = req.body;
-  const polls = JSON.parse(fs.readFileSync(pollsPath));
-  let poll = polls.find(p => p.hotelId === hotelId && p.questionId === questionId);
-  if (!poll) {
-    poll = { hotelId, questionId, yes: 0, no: 0 };
-    polls.push(poll);
+  try {
+    let poll = await Poll.findOne({ hotelId, questionId });
+    if (!poll) {
+      poll = new Poll({ hotelId, questionId });
+    }
+    poll.yes = yes;
+    poll.no = no;
+    await poll.save();
+    res.json({ message: '✅ Poll adjusted successfully.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  poll.yes = yes;
-  poll.no = no;
-  fs.writeFileSync(pollsPath, JSON.stringify(polls, null, 2));
-  res.json({ message: '✅ Poll adjusted successfully.' });
 });
+
 module.exports = router;

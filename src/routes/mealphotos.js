@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
 const multer = require('multer');
+const path = require('path');
+const MealPhoto = require('../models/MealPhoto');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'public/uploads/meals/'),
@@ -10,54 +10,54 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-const mealPhotosPath = path.join(__dirname, '../data/mealphotos.json');
-
-router.get('/', (req, res) => {
-  const photos = JSON.parse(fs.readFileSync(mealPhotosPath));
-  res.json(photos);
-});
-
-router.post('/upload', upload.single('photo'), (req, res) => {
-  const photos = JSON.parse(fs.readFileSync(mealPhotosPath));
-  const { mealId, mealName, hotelId } = req.body;
-
-  const existing = photos.findIndex(p =>
-    p.mealId === parseInt(mealId) &&
-    (hotelId ? p.hotelId === parseInt(hotelId) : !p.hotelId)
-  );
-
-  const photo = {
-    mealId: parseInt(mealId),
-    mealName,
-    hotelId: hotelId ? parseInt(hotelId) : null,
-    url: '/uploads/meals/' + req.file.filename,
-    date: new Date().toISOString().split('T')[0]
-  };
-
-  if (existing >= 0) {
-    photos[existing] = photo;
-  } else {
-    photos.push(photo);
+router.get('/', async (req, res) => {
+  try {
+    const photos = await MealPhoto.find();
+    res.json(photos);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  fs.writeFileSync(mealPhotosPath, JSON.stringify(photos, null, 2));
-  res.json(photo);
 });
 
-router.get('/meal/:mealId', (req, res) => {
-  const photos = JSON.parse(fs.readFileSync(mealPhotosPath));
+router.post('/upload', upload.single('photo'), async (req, res) => {
+  const { mealId, mealName, hotelId } = req.body;
+  try {
+    const query = { mealId: parseInt(mealId), hotelId: hotelId ? parseInt(hotelId) : null };
+    let photo = await MealPhoto.findOne(query);
+    if (photo) {
+      photo.url = '/uploads/meals/' + req.file.filename;
+      photo.date = new Date().toISOString().split('T')[0];
+    } else {
+      photo = new MealPhoto({
+        mealId: parseInt(mealId),
+        mealName,
+        hotelId: hotelId ? parseInt(hotelId) : null,
+        url: '/uploads/meals/' + req.file.filename,
+        date: new Date().toISOString().split('T')[0]
+      });
+    }
+    await photo.save();
+    res.json(photo);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/meal/:mealId', async (req, res) => {
   const mealId = parseInt(req.params.mealId);
   const hotelId = req.query.hotelId ? parseInt(req.query.hotelId) : null;
-
-  let photo = null;
-  if (hotelId) {
-    photo = photos.find(p => p.mealId === mealId && p.hotelId === hotelId);
+  try {
+    let photo = null;
+    if (hotelId) {
+      photo = await MealPhoto.findOne({ mealId, hotelId });
+    }
+    if (!photo) {
+      photo = await MealPhoto.findOne({ mealId, hotelId: null });
+    }
+    res.json(photo || null);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  if (!photo) {
-    photo = photos.find(p => p.mealId === mealId && !p.hotelId);
-  }
-
-  res.json(photo || null);
 });
 
 module.exports = router;

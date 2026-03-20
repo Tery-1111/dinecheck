@@ -1,79 +1,67 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
+const Payment = require('../models/Payment');
+const User = require('../models/User');
 
-const paymentsPath = path.join(__dirname, '../data/payments.json');
-const usersPath = path.join(__dirname, '../data/users.json');
-
-router.post('/submit', (req, res) => {
+router.post('/submit', async (req, res) => {
   const { username, transactionCode } = req.body;
-
   if (!username || !transactionCode) {
     return res.status(400).json({ error: 'Username and transaction code are required.' });
   }
+  try {
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ error: 'Comrade not found.' });
 
-  const users = JSON.parse(fs.readFileSync(usersPath));
-  const user = users.find(u => u.username === username);
+    const existing = await Payment.findOne({ transactionCode });
+    if (existing) return res.status(400).json({ error: 'Transaction code already used.' });
 
-  if (!user) {
-    return res.status(404).json({ error: 'Comrade not found.' });
+    const payment = new Payment({
+      username,
+      transactionCode,
+      amount: 10,
+      status: 'pending',
+      submittedDate: new Date().toISOString().split('T')[0]
+    });
+    await payment.save();
+    res.json({
+      message: 'Payment submitted! The developer will confirm within 24hrs and your Premium will activate.',
+      payment
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  const payments = JSON.parse(fs.readFileSync(paymentsPath));
-
-  if (payments.find(p => p.transactionCode === transactionCode)) {
-    return res.status(400).json({ error: 'Transaction code already used.' });
-  }
-
-  const payment = {
-    id: payments.length + 1,
-    username,
-    transactionCode,
-    amount: 10,
-    status: 'pending',
-    submittedDate: new Date().toISOString().split('T')[0]
-  };
-
-  payments.push(payment);
-  fs.writeFileSync(paymentsPath, JSON.stringify(payments, null, 2));
-
-  res.json({
-    message: 'Payment submitted! The developer will confirm within 24hrs and your Premium will activate.',
-    payment
-  });
 });
 
-router.post('/confirm', (req, res) => {
+router.post('/confirm', async (req, res) => {
   const { transactionCode } = req.body;
+  try {
+    const payment = await Payment.findOne({ transactionCode });
+    if (!payment) return res.status(404).json({ error: 'Transaction code not found.' });
 
-  const payments = JSON.parse(fs.readFileSync(paymentsPath));
-  const payment = payments.find(p => p.transactionCode === transactionCode);
+    payment.status = 'confirmed';
+    payment.confirmedDate = new Date().toISOString().split('T')[0];
+    await payment.save();
 
-  if (!payment) {
-    return res.status(404).json({ error: 'Transaction code not found.' });
+    const user = await User.findOne({ username: payment.username });
+    if (user) {
+      user.premium = true;
+      user.premiumExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      await user.save();
+      return res.json({ message: 'Payment confirmed. Premium activated for ' + payment.username + ' until ' + user.premiumExpiry });
+    }
+    res.json({ message: 'Payment confirmed.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  payment.status = 'confirmed';
-  payment.confirmedDate = new Date().toISOString().split('T')[0];
-
-  const users = JSON.parse(fs.readFileSync(usersPath));
-  const user = users.find(u => u.username === payment.username);
-
-  if (user) {
-    user.premium = true;
-    user.premiumExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
-  }
-
-  fs.writeFileSync(paymentsPath, JSON.stringify(payments, null, 2));
-
-  res.json({ message: 'Payment confirmed. Premium activated for ' + payment.username + ' until ' + user.premiumExpiry });
 });
 
-router.get('/pending', (req, res) => {
-  const payments = JSON.parse(fs.readFileSync(paymentsPath));
-  res.json(payments.filter(p => p.status === 'pending'));
+router.get('/pending', async (req, res) => {
+  try {
+    const payments = await Payment.find({ status: 'pending' });
+    res.json(payments);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
