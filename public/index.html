@@ -295,7 +295,7 @@
         div.innerHTML='<div style="padding:0 16px"><div class="sec-title" style="margin-bottom:10px">🔔 Alerts</div><div class="fpills" id="alertPills"><button class="fpill active" id="alert-all" onclick="filterAlerts(\'all\')">All</button><button class="fpill" id="alert-rising" onclick="filterAlerts(\'rising\')">🔥 Rising</button><button class="fpill" id="alert-warning" onclick="filterAlerts(\'warning\')">⚠️ Warnings</button><button class="fpill" id="alert-trending" onclick="filterAlerts(\'trending\')">📈 Trending</button></div><div id="alertsContainer"></div></div>';
         loadAlerts('all');
       }else if(name==='register'){
-        div.innerHTML='<div class="form-card"><h3>🎓 Comrade Registration</h3><div id="registerMsg"></div><input id="regNumber" type="text" placeholder="Reg Number e.g. EN100/12345/2022"/><input id="regEmail" type="text" placeholder="Email @student.egerton.ac.ke"/><input id="regName" type="text" placeholder="Full Name"/><input id="regFaculty" type="text" placeholder="School / Faculty"/><select id="regYear" style="width:100%;padding:11px 13px;margin-bottom:9px;border:1.5px solid #e5e5ea;border-radius:11px;font-size:0.88rem;background:#f2f2f7"><option value="">Year of Study</option><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option><option>Postgraduate</option></select><input id="regUsername" type="text" placeholder="Handle e.g. @njenga_spoon"/><button onclick="registerUser()">Register as Comrade</button></div>';
+        div.innerHTML='<div class="form-card"><h3>🎓 Comrade Registration</h3><div id="registerMsg"></div><input id="regNumber" type="text" placeholder="Reg Number e.g. EN100/12345/2022 or S17/02920/24"/><input id="regEmail" type="text" placeholder="Email e.g. william.029@student.egerton.ac.ke"/><input id="regName" type="text" placeholder="Full Name"/><input id="regFaculty" type="text" placeholder="School / Faculty"/><select id="regYear" style="width:100%;padding:11px 13px;margin-bottom:9px;border:1.5px solid #e5e5ea;border-radius:11px;font-size:0.88rem;background:#f2f2f7"><option value="">Year of Study</option><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option><option>Postgraduate</option></select><input id="regUsername" type="text" placeholder="Handle e.g. @njenga_spoon"/><button onclick="registerUser()">Register as Comrade</button></div>';
       }else if(name==='premium'){
         div.innerHTML='<div class="prem-hero"><h3>💰 KSh 10 / week</h3><p style="opacity:0.9;font-size:0.85rem">Send via M-Pesa to:</p><div class="prem-till">9962231</div><p style="opacity:0.9;font-size:0.82rem">Enter your M-Pesa code below</p></div><div id="premiumMsg" style="padding:0 16px"></div><div class="form-card"><input id="premiumUsername" type="text" placeholder="Your comrade handle"/><input id="premiumCode" type="text" placeholder="M-Pesa code e.g. QK2X3Y4Z5"/><button onclick="submitPayment()">Activate Premium</button></div><div class="feat-list"><p>✅ Posts go live instantly</p><p>✅ No approval wait time</p><p>✅ Priority leaderboard placement</p><p>✅ Premium badge on profile</p><p>✅ Cancel any time</p></div>';
       }else if(name==='comrades'){
@@ -310,6 +310,13 @@
     function moodLabel(m){return{prison:'🤢 Prison food',functional:'😐 Functional',decent:'😊 Decent',instagram:'😍 Instagram-worthy',outstanding:'🤩 Chef kiss'}[m]||'';}
     function getMoodEmojis(ratings){const c={};ratings.filter(r=>r.mood).forEach(r=>c[r.mood]=(c[r.mood]||0)+1);const map={prison:'🤢',functional:'😐',decent:'😊',instagram:'😍',outstanding:'🤩'};return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k])=>map[k]||'').join(' ');}
     function getMealPhoto(name,hotelId){let p=mealPhotos.find(p=>p.mealName&&p.mealName.toLowerCase()===name.toLowerCase()&&p.hotelId===hotelId);if(!p)p=mealPhotos.find(p=>p.mealName&&p.mealName.toLowerCase()===name.toLowerCase()&&!p.hotelId);return p?p.url:null;}
+
+    function getMealPrice(mealsStr, mealName) {
+      const escaped = mealName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped + '\\s*\\(KSh\\s*(\\d+)\\)', 'i');
+      const match = mealsStr.match(regex);
+      return match ? 'KES ' + match[1] : '';
+    }
 
     function init(){
       Promise.all([
@@ -351,8 +358,7 @@
         results.forEach(hotel=>{
           const a=avg(hotel.ratings);
           const photo=getMealPhoto(query,hotel._id);
-          const prices=hotel.meals.match(/KSh\s*(\d+)/g);
-          const priceStr=prices?prices[0].replace('KSh','KES').trim():'';
+          const priceStr=getMealPrice(hotel.meals,query);
           div.innerHTML+='<div class="res-card" onclick="window.location.href=\'/hotel.html?id='+hotel._id+'\'">'+(photo?'<img class="rc-img" src="'+photo+'" />':'<div class="rc-no-img">🍽️</div>')+'<div class="rc-info"><div class="rc-meal">'+query+'</div><div class="rc-hotel">'+hotel.name+' · 📍 '+hotel.location+'</div>'+(a?'<div class="rc-stars"><span>'+starsHTML(parseFloat(a))+'</span><span style="color:#8e8e93;font-size:0.7rem">'+a+'/10</span>'+(parseFloat(a)>=7.5?'<span style="font-size:0.66rem;background:#1c1c1e;color:white;padding:1px 5px;border-radius:4px">'+Math.round(parseFloat(a)*10)+'% co</span>':'')+'</div>':'')+'<div class="rc-badges">'+(priceStr?'<span class="price-badge">'+priceStr+'</span>':'')+(a&&parseFloat(a)>=7.5?'<span class="consist-badge">Consistent</span>':'')+'</div></div></div>';
         });
       });
@@ -382,11 +388,20 @@
     function loadPriceChart(){
       fetch('/api/hotels').then(r=>r.json()).then(hotels=>{
         const labels=[],ratings=[],prices=[],colors=[];
-        hotels.forEach(h=>{if(!h.ratings.length)return;const a=h.ratings.reduce((s,r)=>s+r.score,0)/h.ratings.length;const pm=h.meals.match(/KSh\s*(\d+)/g);if(!pm)return;labels.push(h.name);ratings.push(parseFloat(a.toFixed(1)));prices.push(Math.round(pm.reduce((s,p)=>s+parseInt(p.replace(/KSh\s*/,'')),0)/pm.length));colors.push(a>=8?'#2a9d8f':a>=6?'#f4a261':'#e63946');});
+        hotels.forEach(h=>{
+          if(!h.ratings.length)return;
+          const a=h.ratings.reduce((s,r)=>s+r.score,0)/h.ratings.length;
+          const pm=h.meals.match(/KSh\s*(\d+)/g);
+          if(!pm)return;
+          const allPrices=pm.map(p=>parseInt(p.replace(/KSh\s*/,'')));
+          const avgPrice=Math.round(allPrices.reduce((s,p)=>s+p,0)/allPrices.length);
+          labels.push(h.name);ratings.push(parseFloat(a.toFixed(1)));prices.push(avgPrice);
+          colors.push(a>=8?'#2a9d8f':a>=6?'#f4a261':'#e63946');
+        });
         const ph=document.getElementById('chartPH');
         if(!labels.length){if(ph)ph.style.display='block';return;}if(ph)ph.style.display='none';
         if(priceChart){priceChart.destroy();priceChart=null;}
-        priceChart=new Chart(document.getElementById('priceRatingChart').getContext('2d'),{type:'bar',data:{labels,datasets:[{label:'Rating(/10)',data:ratings,backgroundColor:colors,yAxisID:'y'},{label:'Price(KSh)',data:prices,backgroundColor:'rgba(69,123,157,0.2)',borderColor:'#457b9d',borderWidth:2,type:'line',yAxisID:'y1'}]},options:{responsive:true,plugins:{legend:{labels:{font:{size:10}}}},scales:{y:{beginAtZero:true,max:10,title:{display:true,text:'Rating',font:{size:10}}},y1:{beginAtZero:true,position:'right',title:{display:true,text:'KSh',font:{size:10}},grid:{drawOnChartArea:false}}}}});
+        priceChart=new Chart(document.getElementById('priceRatingChart').getContext('2d'),{type:'bar',data:{labels,datasets:[{label:'Rating(/10)',data:ratings,backgroundColor:colors,yAxisID:'y'},{label:'Avg Price(KSh)',data:prices,backgroundColor:'rgba(69,123,157,0.2)',borderColor:'#457b9d',borderWidth:2,type:'line',yAxisID:'y1'}]},options:{responsive:true,plugins:{legend:{labels:{font:{size:10}}}},scales:{y:{beginAtZero:true,max:10,title:{display:true,text:'Rating',font:{size:10}}},y1:{beginAtZero:true,position:'right',title:{display:true,text:'KSh',font:{size:10}},grid:{drawOnChartArea:false}}}}});
       });
     }
 
