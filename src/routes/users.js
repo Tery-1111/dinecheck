@@ -9,18 +9,18 @@ function validateEgertonReg(reg) {
 }
 
 function validateEgertonEmail(email) {
-  return email.endsWith('@student.egerton.ac.ke');
+  return email.endsWith('@student.egerton.ac.ke') || email.endsWith('@egerton.ac.ke');
 }
 
 router.post('/register', async (req, res) => {
   const { regNumber, email, fullName, faculty, year, username } = req.body;
 
   if (!validateEgertonReg(regNumber)) {
-    return res.status(400).json({ error: 'Invalid Egerton registration number format. Use format like EN100/12345/2022 or S17/02920/24' });
+    return res.status(400).json({ error: 'Invalid Egerton registration number. Use format like EN100/12345/2022 or S17/02920/24' });
   }
 
   if (!validateEgertonEmail(email)) {
-    return res.status(400).json({ error: 'Must use a valid @student.egerton.ac.ke email.' });
+    return res.status(400).json({ error: 'Must use a valid @student.egerton.ac.ke or @egerton.ac.ke email.' });
   }
 
   try {
