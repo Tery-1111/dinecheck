@@ -309,8 +309,11 @@
     function starsHTML(s){const f=Math.round(s/2);return'★'.repeat(f)+'☆'.repeat(5-f);}
     function moodLabel(m){return{prison:'🤢 Prison food',functional:'😐 Functional',decent:'😊 Decent',instagram:'😍 Instagram-worthy',outstanding:'🤩 Chef kiss'}[m]||'';}
     function getMoodEmojis(ratings){const c={};ratings.filter(r=>r.mood).forEach(r=>c[r.mood]=(c[r.mood]||0)+1);const map={prison:'🤢',functional:'😐',decent:'😊',instagram:'😍',outstanding:'🤩'};return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k])=>map[k]||'').join(' ');}
-    function getMealPhoto(name,hotelId){let p=mealPhotos.find(p=>p.mealName&&p.mealName.toLowerCase()===name.toLowerCase()&&p.hotelId===hotelId);if(!p)p=mealPhotos.find(p=>p.mealName&&p.mealName.toLowerCase()===name.toLowerCase()&&!p.hotelId);return p?p.url:null;}
-
+function getMealPhoto(name,hotelId){
+  let p=mealPhotos.find(p=>p.mealName&&p.mealName.toLowerCase()===name.toLowerCase()&&p.hotelId===hotelId);
+  if(!p)p=mealPhotos.find(p=>p.mealName&&p.mealName.toLowerCase()===name.toLowerCase()&&(p.hotelId===null||p.hotelId===undefined||p.hotelId===''));
+  return p?p.url:null;
+}
     function getMealPrice(mealsStr, mealName) {
       const escaped = mealName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(escaped + '\\s*\\(KSh\\s*(\\d+)\\)', 'i');

@@ -53,8 +53,8 @@
     .poll-adj-row { display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
     .poll-adj-row input, .poll-adj-row select { padding:8px; border:1px solid #333; border-radius:6px; background:#0f3460; color:white; font-size:0.85rem; }
     .meal-photo-row { background:#0f3460; border-radius:8px; padding:12px; margin-bottom:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-    .meal-photo-preview { width:50px; height:40px; object-fit:cover; border-radius:6px; }
-    .meal-photo-placeholder { width:50px; height:40px; background:#1a1a2e; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:1.2rem; }
+    .meal-photo-preview { width:60px; height:50px; object-fit:cover; border-radius:6px; border:2px solid #2a9d8f; }
+    .meal-photo-placeholder { width:60px; height:50px; background:#1a1a2e; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:1.4rem; border:2px dashed #333; }
     .settings-card { background:#16213e; border-radius:10px; padding:25px; margin-bottom:20px; border:1px solid #333; }
     .settings-card h3 { color:#eee; margin-bottom:15px; font-size:1.1rem; }
     .settings-card input[type="password"] { width:100%; padding:10px; margin-bottom:12px; border:1px solid #333; border-radius:6px; background:#0f3460; color:white; font-size:0.95rem; }
@@ -116,7 +116,7 @@
     <div class="page" id="tab-mealphotos">
       <div class="container">
         <h2>🖼️ Meal Photos</h2>
-        <p style="color:#aaa;margin-bottom:20px">Upload a default photo for each meal.</p>
+        <p style="color:#aaa;margin-bottom:20px">Upload photos for meals. Photos are stored permanently on Cloudinary.</p>
         <div class="form-section" style="margin-bottom:20px">
           <h3 style="margin-bottom:15px">Upload Hotel-Specific Meal Photo</h3>
           <label>Select Hotel</label>
@@ -127,7 +127,7 @@
           <select id="mealSelectForPhoto" style="width:100%;padding:10px;margin-bottom:12px;border:1px solid #333;border-radius:6px;background:#0f3460;color:white"></select>
           <label>Photo</label>
           <input type="file" id="specificMealPhoto" accept="image/*" style="background:#0f3460;color:#eee;padding:8px;margin-bottom:12px" />
-          <button onclick="uploadSpecificMealPhoto()" style="background:#2a9d8f;color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer">Upload</button>
+          <button onclick="uploadSpecificMealPhoto()" style="background:#2a9d8f;color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-size:0.95rem">Upload Photo</button>
           <p id="specificMealPhotoMsg" class="success-msg"></p>
         </div>
         <h3 style="margin-bottom:15px">All 47 Meal Default Photos</h3>
@@ -316,8 +316,8 @@
       fetch('/api/mealphotos').then(r=>r.json()).then(photos=>{
         const div=document.getElementById('mealPhotoUploader');if(!div)return;div.innerHTML='';
         allMeals.forEach(m=>{
-          const existing=photos.find(p=>p.mealId===m.id&&!p.hotelId);
-          div.innerHTML+='<div class="meal-photo-row">'+(existing?'<img src="'+existing.url+'" class="meal-photo-preview" />':'<div class="meal-photo-placeholder">🍽️</div>')+'<span style="flex:1;color:#eee;font-size:0.9rem">'+m.name+'</span><input type="file" id="mphoto-'+m.id+'" accept="image/*" style="color:#aaa;font-size:0.8rem;flex:1" /><button onclick="uploadMealPhoto('+m.id+',\''+m.name+'\')" style="background:#2a9d8f;color:white;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:0.85rem">Upload</button></div>';
+          const existing=photos.find(p=>p.mealId===m.id&&(p.hotelId===null||p.hotelId===undefined||p.hotelId===''));
+          div.innerHTML+='<div class="meal-photo-row">'+(existing?'<img src="'+existing.url+'" class="meal-photo-preview" />':'<div class="meal-photo-placeholder">🍽️</div>')+'<span style="flex:1;color:#eee;font-size:0.9rem;font-weight:600">'+m.name+'</span><input type="file" id="mphoto-'+m.id+'" accept="image/*" style="color:#aaa;font-size:0.8rem;flex:1" /><button onclick="uploadMealPhoto('+m.id+',\''+m.name+'\')" style="background:#2a9d8f;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:0.85rem;font-weight:700">Upload</button>'+(existing?'<span style="color:#2a9d8f;font-size:0.75rem">✅ Has photo</span>':'<span style="color:#aaa;font-size:0.75rem">No photo</span>')+'</div>';
         });
       });
     }
@@ -325,8 +325,22 @@
     function uploadMealPhoto(mealId,mealName){
       const fileInput=document.getElementById('mphoto-'+mealId);
       if(!fileInput.files[0]){alert('Please select a photo for '+mealName);return;}
-      const formData=new FormData();formData.append('photo',fileInput.files[0]);formData.append('mealId',mealId);formData.append('mealName',mealName);
-      fetch('/api/mealphotos/upload',{method:'POST',body:formData}).then(r=>r.json()).then(()=>loadMealPhotoUploader());
+      const btn=fileInput.nextElementSibling;
+      btn.textContent='Uploading...';btn.disabled=true;
+      const formData=new FormData();
+      formData.append('photo',fileInput.files[0]);
+      formData.append('mealId',mealId);
+      formData.append('mealName',mealName);
+      fetch('/api/mealphotos/upload',{method:'POST',body:formData}).then(r=>r.json()).then(data=>{
+        if(data.url){
+          btn.textContent='Upload';btn.disabled=false;
+          fileInput.value='';
+          loadMealPhotoUploader();
+        }else{
+          btn.textContent='Upload';btn.disabled=false;
+          alert('❌ Upload failed. Try again.');
+        }
+      }).catch(()=>{btn.textContent='Upload';btn.disabled=false;alert('❌ Network error.');});
     }
 
     function uploadSpecificMealPhoto(){
@@ -334,13 +348,25 @@
       const mealId=document.getElementById('mealSelectForPhoto').value;
       const mealName=allMeals.find(m=>m.id===parseInt(mealId))?.name||'';
       const fileInput=document.getElementById('specificMealPhoto');
+      const msg=document.getElementById('specificMealPhotoMsg');
       if(!fileInput.files[0]){alert('Please select a photo');return;}
-      const formData=new FormData();formData.append('photo',fileInput.files[0]);formData.append('mealId',mealId);formData.append('mealName',mealName);
+      msg.textContent='Uploading...';
+      const formData=new FormData();
+      formData.append('photo',fileInput.files[0]);
+      formData.append('mealId',mealId);
+      formData.append('mealName',mealName);
       if(hotelId)formData.append('hotelId',hotelId);
-      fetch('/api/mealphotos/upload',{method:'POST',body:formData}).then(r=>r.json()).then(()=>{
-        document.getElementById('specificMealPhotoMsg').textContent='✅ Photo uploaded for '+mealName+(hotelId?' at selected hotel':' (global)');
-        fileInput.value='';loadMealPhotoUploader();
-      });
+      fetch('/api/mealphotos/upload',{method:'POST',body:formData}).then(r=>r.json()).then(data=>{
+        if(data.url){
+          msg.style.color='#2a9d8f';
+          msg.textContent='✅ Photo uploaded for '+mealName+(hotelId?' at selected hotel':' (global default)');
+          fileInput.value='';
+          loadMealPhotoUploader();
+        }else{
+          msg.style.color='#e63946';
+          msg.textContent='❌ Upload failed. Try again.';
+        }
+      }).catch(()=>{msg.style.color='#e63946';msg.textContent='❌ Network error.';});
     }
 
     function submitNewHotel(){
