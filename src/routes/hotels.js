@@ -1,15 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
 const Hotel = require('../models/Hotel');
 const User = require('../models/User');
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'public/uploads/'),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const { uploadHotel } = require('../cloudinary');
 
 router.get('/', async (req, res) => {
   try {
@@ -89,13 +82,13 @@ router.post('/:id/rate', async (req, res) => {
   }
 });
 
-router.post('/:id/photo', upload.single('photo'), async (req, res) => {
+router.post('/:id/photo', uploadHotel.single('photo'), async (req, res) => {
   try {
     const hotel = await Hotel.findById(req.params.id);
     if (!hotel) return res.status(404).json({ error: 'Hotel not found' });
     const photo = {
       filename: req.file.filename,
-      url: '/uploads/' + req.file.filename,
+      url: req.file.path,
       uploadedBy: req.body.username || 'anonymous',
       date: new Date().toISOString().split('T')[0]
     };
@@ -129,7 +122,6 @@ router.post('/:id/quickvote', async (req, res) => {
       date: new Date().toISOString().split('T')[0]
     });
     await hotel.save();
-
     const upvotes = hotel.quickvotes.filter(v => v.vote === 'up').length;
     const downvotes = hotel.quickvotes.filter(v => v.vote === 'down').length;
     res.json({ message: 'Vote recorded', upvotes, downvotes, total: hotel.quickvotes.length });
