@@ -3,6 +3,7 @@ const router = express.Router();
 const Hotel = require('../models/Hotel');
 const User = require('../models/User');
 const { uploadHotel } = require('../cloudinary');
+const { normalizeMeal } = require('../mealNormalizer');
 
 router.get('/', async (req, res) => {
   try {
@@ -15,9 +16,13 @@ router.get('/', async (req, res) => {
 
 router.get('/search', async (req, res) => {
   try {
-    const query = req.query.meal.toLowerCase();
+    const raw = req.query.meal;
+    const normalized = normalizeMeal(raw);
     const hotels = await Hotel.find();
-    const results = hotels.filter(h => h.meals.toLowerCase().includes(query));
+    const results = hotels.filter(h => {
+      const meals = h.meals.toLowerCase();
+      return meals.includes(normalized.toLowerCase()) || meals.includes(raw.toLowerCase());
+    });
     res.json(results);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -47,7 +52,7 @@ router.post('/:id/rate', async (req, res) => {
     const hotel = await Hotel.findById(req.params.id);
     if (!hotel) return res.status(404).json({ error: 'Hotel not found' });
     const rating = {
-      meal: req.body.meal,
+      meal: normalizeMeal(req.body.meal),
       score: req.body.score,
       comment: req.body.comment,
       username: req.body.username || null,
