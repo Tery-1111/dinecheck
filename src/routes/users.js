@@ -9,18 +9,20 @@ function validateEgertonReg(reg) {
 }
 
 function validateEgertonEmail(email) {
-  return email.endsWith('@student.egerton.ac.ke') || email.endsWith('@egerton.ac.ke');
+  const lower = email.toLowerCase();
+  return lower.endsWith('@student.egerton.ac.ke') || lower.endsWith('@egerton.ac.ke');
 }
 
 router.post('/register', async (req, res) => {
-  const { regNumber, email, fullName, faculty, year, username } = req.body;
+  const { regNumber, fullName, faculty, year, username } = req.body;
+  const email = req.body.email.toLowerCase();
 
   if (!validateEgertonReg(regNumber)) {
     return res.status(400).json({ error: 'Invalid Egerton registration number. Use format like EN100/12345/2022 or S17/02920/24' });
   }
 
   if (!validateEgertonEmail(email)) {
-    return res.status(400).json({ error: 'Must use a valid @student.egerton.ac.ke or @egerton.ac.ke email.' });
+    return res.status(400).json({ error: 'Must use a valid Egerton email e.g. william.0292024@student.egerton.ac.ke' });
   }
 
   try {
@@ -31,7 +33,12 @@ router.post('/register', async (req, res) => {
     }
 
     const newUser = new User({
-      regNumber, email, fullName, faculty, year, username,
+      regNumber,
+      email,
+      fullName,
+      faculty,
+      year,
+      username,
       rank: 'Spoon Rookie',
       rankBadge: '🥄',
       premium: true,
