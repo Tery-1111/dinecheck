@@ -5,7 +5,7 @@ const path = require('path');
 const User = require('../models/User');
 
 function validateEgertonReg(reg) {
-  return /^(EN|BN|EL|EM|ES|ET)\d{3}\/\d{4,6}\/\d{4}$/i.test(reg);
+  return /^[A-Z]{1,4}\d{0,3}\/\d{4,6}\/\d{2,4}$/i.test(reg);
 }
 
 function validateEgertonEmail(email) {
@@ -16,7 +16,7 @@ router.post('/register', async (req, res) => {
   const { regNumber, email, fullName, faculty, year, username } = req.body;
 
   if (!validateEgertonReg(regNumber)) {
-    return res.status(400).json({ error: 'Invalid Egerton registration number format.' });
+    return res.status(400).json({ error: 'Invalid Egerton registration number format. Use format like EN100/12345/2022 or S17/02920/24' });
   }
 
   if (!validateEgertonEmail(email)) {
