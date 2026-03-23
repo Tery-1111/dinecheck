@@ -55,6 +55,10 @@
     .meal-photo-row { background:#0f3460; border-radius:8px; padding:12px; margin-bottom:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
     .meal-photo-preview { width:60px; height:50px; object-fit:cover; border-radius:6px; border:2px solid #2a9d8f; }
     .meal-photo-placeholder { width:60px; height:50px; background:#1a1a2e; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:1.4rem; border:2px dashed #333; }
+    .photo-upload-section { background:#0f3460; border-radius:8px; padding:16px; margin-bottom:14px; border:1px solid #333; }
+    .photo-upload-section label { color:#2a9d8f; font-size:0.9rem; font-weight:700; display:block; margin-bottom:6px; }
+    .photo-upload-section p { color:#aaa; font-size:0.78rem; margin-bottom:8px; }
+    .photo-upload-section input[type="file"] { color:#eee; font-size:0.85rem; width:100%; }
     .settings-card { background:#16213e; border-radius:10px; padding:25px; margin-bottom:20px; border:1px solid #333; }
     .settings-card h3 { color:#eee; margin-bottom:15px; font-size:1.1rem; }
     .settings-card input[type="password"] { width:100%; padding:10px; margin-bottom:12px; border:1px solid #333; border-radius:6px; background:#0f3460; color:white; font-size:0.95rem; }
@@ -105,9 +109,36 @@
           <input type="text" id="newHotelName" placeholder="e.g. Mama Njeri Hotel" />
           <label>Location</label>
           <input type="text" id="newHotelLocation" placeholder="e.g. Njoro Town" />
-          <label>Select Meals Offered + Prices (KSh)</label>
+
+          <h3 style="margin:16px 0 12px;color:#f4a261">📸 Hotel Photos</h3>
+
+          <div class="photo-upload-section">
+            <label>🏠 Exterior Photo</label>
+            <p>Outside view of the hotel — entrance, signage, building</p>
+            <input type="file" id="exteriorPhoto" accept="image/*" />
+          </div>
+
+          <div class="photo-upload-section">
+            <label>🪑 Interior Photo</label>
+            <p>Inside view — seating area, dining hall, kitchen</p>
+            <input type="file" id="interiorPhoto" accept="image/*" />
+          </div>
+
+          <div class="photo-upload-section">
+            <label>📷 Other Photo</label>
+            <p>Any other photo you want to showcase</p>
+            <input type="file" id="otherPhoto" accept="image/*" />
+          </div>
+
+          <div class="photo-upload-section">
+            <label>📋 Menu Photo</label>
+            <p>Price board, menu board or written menu</p>
+            <input type="file" id="menuPhoto" accept="image/*" />
+          </div>
+
+          <h3 style="margin:16px 0 12px;color:#f4a261">🍽️ Select Meals Offered + Prices (KSh)</h3>
           <div class="meals-picker" id="mealsPicker"></div>
-          <button onclick="submitNewHotel()">✅ Add Hotel</button>
+          <button onclick="submitNewHotel()" id="addHotelBtn">✅ Add Hotel</button>
           <p id="addHotelMsg"></p>
         </div>
       </div>
@@ -381,15 +412,36 @@
         if(cb&&cb.checked){selectedMeals.push(m.name+(price?' (KSh '+price+')':''));}
       });
       if(!selectedMeals.length){document.getElementById('addHotelMsg').textContent='Please select at least one meal.';return;}
-      fetch('/api/hotels',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,location,meals:selectedMeals.join(', ')})})
+      const formData=new FormData();
+      formData.append('name',name);
+      formData.append('location',location);
+      formData.append('meals',selectedMeals.join(', '));
+      const exterior=document.getElementById('exteriorPhoto').files[0];
+      const interior=document.getElementById('interiorPhoto').files[0];
+      const other=document.getElementById('otherPhoto').files[0];
+      const menu=document.getElementById('menuPhoto').files[0];
+      if(exterior)formData.append('exterior',exterior);
+      if(interior)formData.append('interior',interior);
+      if(other)formData.append('other',other);
+      if(menu)formData.append('menu',menu);
+      const btn=document.getElementById('addHotelBtn');
+      btn.textContent='Adding hotel...';btn.disabled=true;
+      document.getElementById('addHotelMsg').textContent='Uploading photos and saving...';
+      fetch('/api/hotels',{method:'POST',body:formData})
         .then(r=>r.json()).then(data=>{
+          btn.textContent='✅ Add Hotel';btn.disabled=false;
           document.getElementById('addHotelMsg').className='success-msg';
-          document.getElementById('addHotelMsg').textContent='✅ Hotel "'+data.name+'" added!';
-          document.getElementById('newHotelName').value='';document.getElementById('newHotelLocation').value='';
+          document.getElementById('addHotelMsg').textContent='✅ Hotel "'+data.name+'" added with '+(data.photos?data.photos.length:0)+' photo(s)!';
+          document.getElementById('newHotelName').value='';
+          document.getElementById('newHotelLocation').value='';
+          document.getElementById('exteriorPhoto').value='';
+          document.getElementById('interiorPhoto').value='';
+          document.getElementById('otherPhoto').value='';
+          document.getElementById('menuPhoto').value='';
           document.querySelectorAll('.meal-pick-row input[type="checkbox"]').forEach(cb=>cb.checked=false);
           document.querySelectorAll('.meal-pick-row input[type="number"]').forEach(inp=>inp.value='');
           loadDashboard();
-        });
+        }).catch(()=>{btn.textContent='✅ Add Hotel';btn.disabled=false;document.getElementById('addHotelMsg').textContent='❌ Error adding hotel.';});
     }
 
     function loadManageHotels(){
@@ -400,7 +452,8 @@
         div.innerHTML='';
         hotels.forEach(h=>{
           const avg=h.ratings.length>0?(h.ratings.reduce((s,r)=>s+r.score,0)/h.ratings.length).toFixed(1):'No ratings';
-          div.innerHTML+='<div class="card"><h3>🏨 '+h.name+'</h3><p>📍 '+h.location+'</p><p>🍽️ '+h.meals+'</p><p>⭐ Avg: '+avg+' · '+h.ratings.length+' rating(s) · '+(h.quickvotes?h.quickvotes.length:0)+' quick vote(s)</p><div style="margin-top:12px"><button class="btn-reject" onclick="deleteHotel(\''+h._id+'\')">🗑️ Remove Hotel</button></div></div>';
+          const photoCount=h.photos?h.photos.length:0;
+          div.innerHTML+='<div class="card"><h3>🏨 '+h.name+'</h3><p>📍 '+h.location+'</p><p>🍽️ '+h.meals+'</p><p>⭐ Avg: '+avg+' · '+h.ratings.length+' rating(s) · '+(h.quickvotes?h.quickvotes.length:0)+' quick vote(s) · 📸 '+photoCount+' photo(s)</p>'+(h.photos&&h.photos.length?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">'+h.photos.map(p=>'<div style="text-align:center"><img src="'+p.url+'" style="width:80px;height:60px;object-fit:cover;border-radius:6px;border:2px solid #333" /><p style="font-size:0.7rem;color:#aaa;margin-top:3px">'+( p.label||'Photo')+'</p></div>').join('')+'</div>':'')+'<div style="margin-top:12px"><button class="btn-reject" onclick="deleteHotel(\''+h._id+'\')">🗑️ Remove Hotel</button></div></div>';
         });
       });
     }

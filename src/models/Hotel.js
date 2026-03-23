@@ -14,6 +14,7 @@ const ratingSchema = new mongoose.Schema({
 const photoSchema = new mongoose.Schema({
   filename: String,
   url: String,
+  label: String,
   uploadedBy: String,
   date: String
 });

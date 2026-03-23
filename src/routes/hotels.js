@@ -29,14 +29,32 @@ router.get('/search', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', uploadHotel.fields([
+  { name: 'exterior', maxCount: 1 },
+  { name: 'interior', maxCount: 1 },
+  { name: 'other', maxCount: 1 },
+  { name: 'menu', maxCount: 1 }
+]), async (req, res) => {
   try {
+    const photos = [];
+    const labels = { exterior: 'Exterior', interior: 'Interior', other: 'Other', menu: 'Menu' };
+    for (const [field, label] of Object.entries(labels)) {
+      if (req.files && req.files[field]) {
+        photos.push({
+          filename: req.files[field][0].filename || '',
+          url: req.files[field][0].path,
+          label,
+          uploadedBy: 'admin',
+          date: new Date().toISOString().split('T')[0]
+        });
+      }
+    }
     const hotel = new Hotel({
       name: req.body.name,
       location: req.body.location,
       meals: req.body.meals,
       ratings: [],
-      photos: [],
+      photos,
       speeds: [],
       quickvotes: []
     });
@@ -92,8 +110,9 @@ router.post('/:id/photo', uploadHotel.single('photo'), async (req, res) => {
     const hotel = await Hotel.findById(req.params.id);
     if (!hotel) return res.status(404).json({ error: 'Hotel not found' });
     const photo = {
-      filename: req.file.filename,
+      filename: req.file.filename || '',
       url: req.file.path,
+      label: req.body.label || 'Other',
       uploadedBy: req.body.username || 'anonymous',
       date: new Date().toISOString().split('T')[0]
     };
