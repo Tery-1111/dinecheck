@@ -12,9 +12,12 @@ const CALLBACK_URL = process.env.MPESA_CALLBACK_URL || 'https://dinecheck.onrend
 
 async function getAccessToken() {
   const auth = Buffer.from(CONSUMER_KEY + ':' + CONSUMER_SECRET).toString('base64');
+  console.log('Getting access token...');
+  console.log('Consumer Key length:', CONSUMER_KEY.length);
   const response = await axios.get('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', {
     headers: { Authorization: 'Basic ' + auth }
   });
+  console.log('Access token obtained:', response.data.access_token ? 'YES' : 'NO');
   return response.data.access_token;
 }
 
@@ -28,21 +31,26 @@ router.post('/stkpush', async (req, res) => {
   const { phone, username } = req.body;
   if (!phone || !username) return res.status(400).json({ error: 'Phone number and username are required.' });
 
-  const user = await User.findOne({ username });
-  if (!user) return res.status(404).json({ error: 'Comrade not found.' });
-
-  const cleanPhone = phone.replace(/\D/g, '').replace(/^0/, '254').replace(/^254254/, '254');
-
   try {
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ error: 'Comrade not found.' });
+
+    const cleanPhone = phone.replace(/\D/g, '').replace(/^0/, '254').replace(/^254254/, '254');
+    console.log('Clean phone:', cleanPhone);
+
     const token = await getAccessToken();
     const timestamp = getTimestamp();
     const password = Buffer.from(SHORTCODE + PASSKEY + timestamp).toString('base64');
+
+    console.log('Sending STK push to:', cleanPhone);
+    console.log('Shortcode:', SHORTCODE);
+    console.log('Callback URL:', CALLBACK_URL);
 
     const response = await axios.post('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
       BusinessShortCode: SHORTCODE,
       Password: password,
       Timestamp: timestamp,
-      TransactionType: 'CustomerBuyGoodsOnline',
+      TransactionType: 'CustomerPayBillOnline',
       Amount: 10,
       PartyA: cleanPhone,
       PartyB: SHORTCODE,
@@ -54,7 +62,9 @@ router.post('/stkpush', async (req, res) => {
       headers: { Authorization: 'Bearer ' + token }
     });
 
+    console.log('STK Push response:', JSON.stringify(response.data));
     const checkoutId = response.data.CheckoutRequestID;
+
     const payment = new Payment({
       username,
       transactionCode: checkoutId,
@@ -66,18 +76,21 @@ router.post('/stkpush', async (req, res) => {
 
     res.json({ message: '✅ M-Pesa prompt sent to ' + cleanPhone + '. Enter your PIN to complete payment.', checkoutId });
   } catch (err) {
-    console.error('STK Push error:', err.response?.data || err.message);
-    res.status(500).json({ error: 'Failed to send M-Pesa prompt. Try again.' });
+    const errData = err.response?.data || err.message;
+    console.error('STK Push error:', JSON.stringify(errData));
+    res.status(500).json({ error: 'Failed to send M-Pesa prompt. Try again.', details: errData });
   }
 });
 
 router.post('/callback', async (req, res) => {
   try {
+    console.log('M-Pesa callback received:', JSON.stringify(req.body));
     const body = req.body.Body?.stkCallback;
     if (!body) return res.json({ ResultCode: 0, ResultDesc: 'Accepted' });
 
     const resultCode = body.ResultCode;
     const checkoutId = body.CheckoutRequestID;
+    console.log('Callback result code:', resultCode, 'CheckoutID:', checkoutId);
 
     if (resultCode === 0) {
       const payment = await Payment.findOne({ transactionCode: checkoutId });
@@ -91,6 +104,7 @@ router.post('/callback', async (req, res) => {
           user.premium = true;
           user.premiumExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
           await user.save();
+          console.log('Premium activated for:', payment.username);
         }
       }
     }
