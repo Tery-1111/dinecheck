@@ -150,7 +150,7 @@
     .form-card h3 { font-size:0.95rem; font-weight:700; margin-bottom:13px; }
     .form-card input, .form-card select { width:100%; padding:11px 13px; margin-bottom:9px; border:1.5px solid #e5e5ea; border-radius:11px; font-size:0.88rem; background:#f2f2f7; outline:none; }
     .form-card input:focus { border-color:#e63946; background:white; }
-    .form-card button { width:100%; background:#e63946; color:white; border:none; padding:13px; border-radius:13px; font-size:0.95rem; font-weight:800; cursor:pointer; }
+    .form-card button { width:100%; background:#e63946; color:white; border:none; padding:13px; border-radius:13px; font-size:0.95rem; font-weight:800; cursor:pointer; margin-bottom:8px; }
     .sbox { background:#d4edda; border-radius:11px; padding:11px 13px; margin-bottom:11px; color:#155724; font-size:0.84rem; }
     .ebox { background:#f8d7da; border-radius:11px; padding:11px 13px; margin-bottom:11px; color:#721c24; font-size:0.84rem; }
     .no-res { color:#8e8e93; font-size:0.86rem; text-align:center; padding:22px 0; }
@@ -165,6 +165,7 @@
     .meal-pick-item input[type="checkbox"] { width:16px; height:16px; cursor:pointer; accent-color:#e63946; flex-shrink:0; }
     .meal-pick-item label { flex:1; font-size:0.78rem; font-weight:600; color:#1c1c1e; cursor:pointer; }
     .meal-pick-item input[type="number"] { width:62px; padding:5px 6px; border:1.5px solid #e5e5ea; border-radius:7px; font-size:0.76rem; background:white; outline:none; text-align:center; }
+    .divider { text-align:center; color:#8e8e93; font-size:0.82rem; margin:8px 0; }
     select { appearance:none; }
   </style>
 </head>
@@ -303,7 +304,7 @@
       }else if(name==='register'){
         div.innerHTML='<div class="form-card"><h3>🎓 Comrade Registration</h3><div id="registerMsg"></div><input id="regNumber" type="text" placeholder="Reg Number e.g. EN100/12345/2022 or S17/02920/24"/><input id="regEmail" type="text" placeholder="Email e.g. william.029@student.egerton.ac.ke"/><input id="regName" type="text" placeholder="Full Name"/><input id="regFaculty" type="text" placeholder="School / Faculty"/><select id="regYear" style="width:100%;padding:11px 13px;margin-bottom:9px;border:1.5px solid #e5e5ea;border-radius:11px;font-size:0.88rem;background:#f2f2f7"><option value="">Year of Study</option><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option><option>Postgraduate</option></select><input id="regUsername" type="text" placeholder="Handle e.g. @njenga_spoon"/><button onclick="registerUser()">Register as Comrade</button></div>';
       }else if(name==='premium'){
-        div.innerHTML='<div class="prem-hero"><h3>💰 KSh 10 / week</h3><p style="opacity:0.9;font-size:0.85rem">Send via M-Pesa to:</p><div class="prem-till">9962231</div><p style="opacity:0.9;font-size:0.82rem">Enter your M-Pesa code below</p></div><div id="premiumMsg" style="padding:0 16px"></div><div class="form-card"><input id="premiumUsername" type="text" placeholder="Your comrade handle"/><input id="premiumCode" type="text" placeholder="M-Pesa code e.g. QK2X3Y4Z5"/><button onclick="submitPayment()">Activate Premium</button></div><div class="feat-list"><p>✅ Posts go live instantly</p><p>✅ No approval wait time</p><p>✅ Priority leaderboard placement</p><p>✅ Premium badge on profile</p><p>✅ Cancel any time</p></div>';
+        div.innerHTML='<div class="prem-hero"><h3>💰 KSh 10 / week</h3><p style="opacity:0.9;font-size:0.85rem">Pay via M-Pesa — prompt sent to your phone</p><div class="prem-till">9962231</div></div><div id="premiumMsg" style="padding:0 16px"></div><div class="form-card"><h3>⚡ Auto Pay via M-Pesa</h3><input id="premiumUsername" type="text" placeholder="Your comrade handle"/><input id="premiumPhone" type="tel" placeholder="Phone number e.g. 0712345678"/><button onclick="stkPush()">📱 Send M-Pesa Prompt</button><div class="divider">— or enter code manually —</div><input id="premiumCode" type="text" placeholder="M-Pesa code e.g. QK2X3Y4Z5"/><button onclick="submitPayment()" style="background:#8e8e93">Submit Code Manually</button></div><div class="feat-list"><p>✅ M-Pesa prompt sent to your phone</p><p>✅ Premium activates automatically</p><p>✅ Priority leaderboard placement</p><p>✅ Premium badge on profile</p><p>✅ Cancel any time</p></div>';
       }else if(name==='comrades'){
         div.innerHTML='<div style="padding:0 16px"><div class="sec-title" style="margin-bottom:10px">👥 Comrades</div><div class="fpills"><button class="fpill active" id="filter-all" onclick="filterComrades(\'all\')">All</button><button class="fpill" id="filter-comrade-chef" onclick="filterComrades(\'Comrade Chef\')">👨‍🍳 Chef</button><button class="fpill" id="filter-knife-elite" onclick="filterComrades(\'Knife Elite\')">🔪 Elite</button><button class="fpill" id="filter-fork-regular" onclick="filterComrades(\'Fork Regular\')">🍴 Regular</button><button class="fpill" id="filter-spoon-rookie" onclick="filterComrades(\'Spoon Rookie\')">🥄 Rookie</button></div><div id="comrades" style="margin-top:10px"></div></div>';
         loadComrades();
@@ -535,6 +536,19 @@
       fetch('/api/users/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({regNumber,email,fullName,faculty,year,username})}).then(r=>r.json()).then(data=>{const msg=document.getElementById('registerMsg');if(data.error){msg.innerHTML='<div class="ebox">❌ '+data.error+'</div>';}else{msg.innerHTML='<div class="sbox">🎉 '+data.message+'</div>';['regNumber','regEmail','regName','regFaculty','regYear','regUsername'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}});
     }
 
+    function stkPush(){
+      const username=document.getElementById('premiumUsername').value;
+      const phone=document.getElementById('premiumPhone').value;
+      if(!username||!phone){alert('Please enter your handle and phone number');return;}
+      const msg=document.getElementById('premiumMsg');
+      msg.innerHTML='<div class="sbox" style="margin:0 16px">⏳ Sending M-Pesa prompt to your phone...</div>';
+      fetch('/api/payments/stkpush',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,phone})})
+        .then(r=>r.json()).then(data=>{
+          if(data.error){msg.innerHTML='<div class="ebox" style="margin:0 16px">❌ '+data.error+'</div>';}
+          else{msg.innerHTML='<div class="sbox" style="margin:0 16px">'+data.message+'</div>';}
+        });
+    }
+
     function submitPayment(){
       const username=document.getElementById('premiumUsername').value;const transactionCode=document.getElementById('premiumCode').value;
       if(!username||!transactionCode){alert('Please fill in all fields');return;}
@@ -567,8 +581,7 @@
     }
 
     function voteSuggestion(id){
-      fetch('/api/mealsuggestions/vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})})
-        .then(()=>loadSuggestions());
+      fetch('/api/mealsuggestions/vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).then(()=>loadSuggestions());
     }
 
     function renderProfile(){
