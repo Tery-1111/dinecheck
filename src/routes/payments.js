@@ -4,27 +4,32 @@ const axios = require('axios');
 const Payment = require('../models/Payment');
 const User = require('../models/User');
 
-const CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY || '';
-const CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET || '';
-const SHORTCODE = process.env.MPESA_SHORTCODE || '174379';
-const PASSKEY = process.env.MPESA_PASSKEY || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
+const CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY || 'biwh5kKFzPRdHFgQXbT56K4grV2dg8uKgEG4JvGqJhxUxeFG';
+const CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET || 'AMHcxP3bHDfT8GPXFAAtDikqBp8ATxAQIpK8bLU2eWBrpZRCtRdX6olzlR1fLPEc';
+const SHORTCODE = '174379';
+const PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
 const CALLBACK_URL = process.env.MPESA_CALLBACK_URL || 'https://dinecheck.onrender.com/api/payments/callback';
 
 async function getAccessToken() {
   const auth = Buffer.from(CONSUMER_KEY + ':' + CONSUMER_SECRET).toString('base64');
   console.log('Getting access token...');
-  console.log('Consumer Key length:', CONSUMER_KEY.length);
-  const response = await axios.get('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', {
-    headers: { Authorization: 'Basic ' + auth }
-  });
-  console.log('Access token obtained:', response.data.access_token ? 'YES' : 'NO');
+  const response = await axios.get(
+    'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
+    { headers: { Authorization: 'Basic ' + auth } }
+  );
+  console.log('Access token obtained successfully');
   return response.data.access_token;
 }
 
 function getTimestamp() {
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
-  return now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+  return now.getFullYear() +
+    pad(now.getMonth() + 1) +
+    pad(now.getDate()) +
+    pad(now.getHours()) +
+    pad(now.getMinutes()) +
+    pad(now.getSeconds());
 }
 
 router.post('/stkpush', async (req, res) => {
@@ -35,49 +40,59 @@ router.post('/stkpush', async (req, res) => {
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ error: 'Comrade not found.' });
 
-    const cleanPhone = phone.replace(/\D/g, '').replace(/^0/, '254').replace(/^254254/, '254');
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.startsWith('0')) cleanPhone = '254' + cleanPhone.substring(1);
+    if (!cleanPhone.startsWith('254')) cleanPhone = '254' + cleanPhone;
     console.log('Clean phone:', cleanPhone);
 
     const token = await getAccessToken();
     const timestamp = getTimestamp();
     const password = Buffer.from(SHORTCODE + PASSKEY + timestamp).toString('base64');
 
-    console.log('Sending STK push to:', cleanPhone);
-    console.log('Shortcode:', SHORTCODE);
+    console.log('Sending STK Push...');
+    console.log('Timestamp:', timestamp);
     console.log('Callback URL:', CALLBACK_URL);
 
-    const response = await axios.post('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
-      BusinessShortCode: SHORTCODE,
-      Password: password,
-      Timestamp: timestamp,
-      TransactionType: 'CustomerPayBillOnline',
-      Amount: 10,
-      PartyA: cleanPhone,
-      PartyB: SHORTCODE,
-      PhoneNumber: cleanPhone,
-      CallBackURL: CALLBACK_URL,
-      AccountReference: 'DineCheck',
-      TransactionDesc: 'DineCheck Premium KSh 10'
-    }, {
-      headers: { Authorization: 'Bearer ' + token }
-    });
+    const response = await axios.post(
+      'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+      {
+        BusinessShortCode: SHORTCODE,
+        Password: password,
+        Timestamp: timestamp,
+        TransactionType: 'CustomerBuyGoodsOnline',
+        Amount: 1,
+        PartyA: cleanPhone,
+        PartyB: SHORTCODE,
+        PhoneNumber: cleanPhone,
+        CallBackURL: CALLBACK_URL,
+        AccountReference: 'DineCheck',
+        TransactionDesc: 'DineCheck Premium KSh 10'
+      },
+      { headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' } }
+    );
 
     console.log('STK Push response:', JSON.stringify(response.data));
     const checkoutId = response.data.CheckoutRequestID;
 
-    const payment = new Payment({
-      username,
-      transactionCode: checkoutId,
-      amount: 10,
-      status: 'pending',
-      submittedDate: new Date().toISOString().split('T')[0]
-    });
-    await payment.save();
+    const existing = await Payment.findOne({ transactionCode: checkoutId });
+    if (!existing) {
+      const payment = new Payment({
+        username,
+        transactionCode: checkoutId,
+        amount: 10,
+        status: 'pending',
+        submittedDate: new Date().toISOString().split('T')[0]
+      });
+      await payment.save();
+    }
 
-    res.json({ message: '✅ M-Pesa prompt sent to ' + cleanPhone + '. Enter your PIN to complete payment.', checkoutId });
+    res.json({
+      message: '✅ M-Pesa prompt sent to ' + cleanPhone + '. Check your phone and enter your PIN to complete payment.',
+      checkoutId
+    });
   } catch (err) {
     const errData = err.response?.data || err.message;
-    console.error('STK Push error:', JSON.stringify(errData));
+    console.error('STK Push error details:', JSON.stringify(errData, null, 2));
     res.status(500).json({ error: 'Failed to send M-Pesa prompt. Try again.', details: errData });
   }
 });
@@ -104,8 +119,15 @@ router.post('/callback', async (req, res) => {
           user.premium = true;
           user.premiumExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
           await user.save();
-          console.log('Premium activated for:', payment.username);
+          console.log('✅ Premium activated for:', payment.username);
         }
+      }
+    } else {
+      console.log('Payment failed or cancelled. Result code:', resultCode);
+      const payment = await Payment.findOne({ transactionCode: checkoutId });
+      if (payment) {
+        payment.status = 'failed';
+        await payment.save();
       }
     }
     res.json({ ResultCode: 0, ResultDesc: 'Accepted' });
