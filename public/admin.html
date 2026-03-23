@@ -84,6 +84,7 @@
       <button onclick="showTab('payments',this)">💰 Payments</button>
       <button onclick="showTab('comrades',this)">👥 Comrades</button>
       <button onclick="showTab('moderation',this)">🚨 Moderation</button>
+      <button onclick="showTab('suggestions',this)">🍽️ Suggestions</button>
       <button onclick="showTab('settings',this)">🔐 Settings</button>
     </nav>
 
@@ -116,7 +117,7 @@
     <div class="page" id="tab-mealphotos">
       <div class="container">
         <h2>🖼️ Meal Photos</h2>
-        <p style="color:#aaa;margin-bottom:20px">Upload photos for meals. Photos are stored permanently on Cloudinary.</p>
+        <p style="color:#aaa;margin-bottom:20px">Photos are stored permanently on Cloudinary.</p>
         <div class="form-section" style="margin-bottom:20px">
           <h3 style="margin-bottom:15px">Upload Hotel-Specific Meal Photo</h3>
           <label>Select Hotel</label>
@@ -220,6 +221,15 @@
       </div>
     </div>
 
+    <!-- SUGGESTIONS -->
+    <div class="page" id="tab-suggestions">
+      <div class="container">
+        <h2>🍽️ Meal Suggestions</h2>
+        <p style="color:#aaa;margin-bottom:20px">Review meal suggestions from comrades. Approved meals are added to the database.</p>
+        <div id="suggestionsList"></div>
+      </div>
+    </div>
+
     <!-- SETTINGS -->
     <div class="page" id="tab-settings">
       <div class="container">
@@ -270,21 +280,25 @@
       if(name==='managehotels')loadManageHotels();
       if(name==='moderation')loadModerationSelects();
       if(name==='mealphotos')loadMealPhotosTab();
+      if(name==='suggestions')loadSuggestions();
     }
 
     function loadDashboard(){
       Promise.all([
         fetch('/api/users').then(r=>r.json()),
         fetch('/api/hotels').then(r=>r.json()),
-        fetch('/api/payments/pending').then(r=>r.json())
-      ]).then(([users,hotels,pending])=>{
+        fetch('/api/payments/pending').then(r=>r.json()),
+        fetch('/api/mealsuggestions').then(r=>r.json())
+      ]).then(([users,hotels,pending,suggestions])=>{
         allHotels=hotels;
         const totalRatings=hotels.reduce((sum,h)=>sum+h.ratings.length,0);
         const totalVotes=hotels.reduce((sum,h)=>sum+(h.quickvotes?h.quickvotes.length:0),0);
+        const pendingSuggestions=suggestions.filter(s=>s.status==='pending').length;
         document.getElementById('statsGrid').innerHTML=
           statCard(users.length,'Comrades')+statCard(hotels.length,'Hotels')+
           statCard(totalRatings,'Full Ratings')+statCard(totalVotes,'Quick Votes')+
-          statCard(pending.length,'Pending Payments')+statCard(users.filter(u=>u.premium).length,'Premium Comrades');
+          statCard(pending.length,'Pending Payments')+statCard(users.filter(u=>u.premium).length,'Premium Comrades')+
+          statCard(pendingSuggestions,'Meal Suggestions');
       });
     }
 
@@ -332,14 +346,9 @@
       formData.append('mealId',mealId);
       formData.append('mealName',mealName);
       fetch('/api/mealphotos/upload',{method:'POST',body:formData}).then(r=>r.json()).then(data=>{
-        if(data.url){
-          btn.textContent='Upload';btn.disabled=false;
-          fileInput.value='';
-          loadMealPhotoUploader();
-        }else{
-          btn.textContent='Upload';btn.disabled=false;
-          alert('❌ Upload failed. Try again.');
-        }
+        btn.textContent='Upload';btn.disabled=false;
+        if(data.url){fileInput.value='';loadMealPhotoUploader();}
+        else{alert('❌ Upload failed. Try again.');}
       }).catch(()=>{btn.textContent='Upload';btn.disabled=false;alert('❌ Network error.');});
     }
 
@@ -357,15 +366,8 @@
       formData.append('mealName',mealName);
       if(hotelId)formData.append('hotelId',hotelId);
       fetch('/api/mealphotos/upload',{method:'POST',body:formData}).then(r=>r.json()).then(data=>{
-        if(data.url){
-          msg.style.color='#2a9d8f';
-          msg.textContent='✅ Photo uploaded for '+mealName+(hotelId?' at selected hotel':' (global default)');
-          fileInput.value='';
-          loadMealPhotoUploader();
-        }else{
-          msg.style.color='#e63946';
-          msg.textContent='❌ Upload failed. Try again.';
-        }
+        if(data.url){msg.style.color='#2a9d8f';msg.textContent='✅ Photo uploaded for '+mealName+(hotelId?' at selected hotel':' (global default)');fileInput.value='';loadMealPhotoUploader();}
+        else{msg.style.color='#e63946';msg.textContent='❌ Upload failed. Try again.';}
       }).catch(()=>{msg.style.color='#e63946';msg.textContent='❌ Network error.';});
     }
 
@@ -464,6 +466,29 @@
     function removeRating(hotelId,index){
       if(!confirm('Remove this rating?'))return;
       fetch('/api/hotels/'+hotelId+'/rating/'+index,{method:'DELETE'}).then(r=>r.json()).then(()=>loadRatingsForRemoval());
+    }
+
+    function loadSuggestions(){
+      fetch('/api/mealsuggestions').then(r=>r.json()).then(suggestions=>{
+        const div=document.getElementById('suggestionsList');
+        if(!suggestions.length){div.innerHTML='<p class="no-results">No suggestions yet.</p>';return;}
+        div.innerHTML='';
+        suggestions.forEach(s=>{
+          const color=s.status==='approved'?'#2a9d8f':s.status==='rejected'?'#e63946':'#f4a261';
+          div.innerHTML+='<div class="card"><h3>🍽️ '+s.mealName+' <span style="color:'+color+';font-size:0.75rem">['+s.status.toUpperCase()+']</span></h3><p>'+(s.description||'No description')+'</p><p>Suggested by: '+s.username+' · '+s.date+' · 👍 '+s.votes+' votes</p>'+(s.status==='pending'?'<div style="margin-top:12px"><button class="btn-confirm" onclick="approveSuggestion('+s.id+')">✅ Approve & Add to Meals</button><button class="btn-reject" style="margin-left:8px" onclick="rejectSuggestion('+s.id+')">❌ Reject</button></div>':'')+'</div>';
+        });
+      });
+    }
+
+    function approveSuggestion(id){
+      if(!confirm('Approve this meal and add it to the database?'))return;
+      fetch('/api/mealsuggestions/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})})
+        .then(r=>r.json()).then(data=>{alert(data.message||data.error);loadSuggestions();loadDashboard();});
+    }
+
+    function rejectSuggestion(id){
+      fetch('/api/mealsuggestions/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})})
+        .then(r=>r.json()).then(()=>{loadSuggestions();loadDashboard();});
     }
 
     function loadPayments(){

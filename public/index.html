@@ -231,6 +231,7 @@
       <div class="more-tile" style="background:#f0f4ff;color:#457b9d" onclick="window.location.href='/hotornot.html'"><div class="mt-icon">🔥</div><div class="mt-lbl">Hot or Not</div></div>
       <div class="more-tile" style="background:#f5f0ff;color:#6c63ff" onclick="showSub('comrades')"><div class="mt-icon">👥</div><div class="mt-lbl">Comrades</div></div>
       <div class="more-tile" style="background:#f0f9ff;color:#0ea5e9" onclick="showAdminAccess()"><div class="mt-icon">⚙️</div><div class="mt-lbl">Admin</div></div>
+      <div class="more-tile" style="background:#f0fff4;color:#2a9d8f" onclick="showSub('suggest')"><div class="mt-icon">🍽️</div><div class="mt-lbl">Suggest Meal</div></div>
     </div>
     <div id="moreSub"></div>
   </div>
@@ -301,6 +302,9 @@
       }else if(name==='comrades'){
         div.innerHTML='<div style="padding:0 16px"><div class="sec-title" style="margin-bottom:10px">👥 Comrades</div><div class="fpills"><button class="fpill active" id="filter-all" onclick="filterComrades(\'all\')">All</button><button class="fpill" id="filter-comrade-chef" onclick="filterComrades(\'Comrade Chef\')">👨‍🍳 Chef</button><button class="fpill" id="filter-knife-elite" onclick="filterComrades(\'Knife Elite\')">🔪 Elite</button><button class="fpill" id="filter-fork-regular" onclick="filterComrades(\'Fork Regular\')">🍴 Regular</button><button class="fpill" id="filter-spoon-rookie" onclick="filterComrades(\'Spoon Rookie\')">🥄 Rookie</button></div><div id="comrades" style="margin-top:10px"></div></div>';
         loadComrades();
+      }else if(name==='suggest'){
+        div.innerHTML='<div class="form-card"><h3>🍽️ Suggest a New Meal</h3><div id="suggestMsg"></div><input id="suggestMeal" type="text" placeholder="Meal name e.g. Nyama Choma Special"/><input id="suggestDesc" type="text" placeholder="Description (optional)"/><input id="suggestUsername" type="text" placeholder="Your comrade handle (optional)"/><button onclick="submitSuggestion()">Submit Suggestion</button></div><div style="padding:0 16px"><div class="sec-title" style="margin-bottom:10px">📋 Community Suggestions</div><div id="suggestList"></div></div>';
+        loadSuggestions();
       }
     }
 
@@ -309,16 +313,16 @@
     function starsHTML(s){const f=Math.round(s/2);return'★'.repeat(f)+'☆'.repeat(5-f);}
     function moodLabel(m){return{prison:'🤢 Prison food',functional:'😐 Functional',decent:'😊 Decent',instagram:'😍 Instagram-worthy',outstanding:'🤩 Chef kiss'}[m]||'';}
     function getMoodEmojis(ratings){const c={};ratings.filter(r=>r.mood).forEach(r=>c[r.mood]=(c[r.mood]||0)+1);const map={prison:'🤢',functional:'😐',decent:'😊',instagram:'😍',outstanding:'🤩'};return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k])=>map[k]||'').join(' ');}
-function getMealPhoto(name,hotelId){
-  let p=mealPhotos.find(p=>p.mealName&&p.mealName.toLowerCase()===name.toLowerCase()&&p.hotelId===hotelId);
-  if(!p)p=mealPhotos.find(p=>p.mealName&&p.mealName.toLowerCase()===name.toLowerCase()&&(p.hotelId===null||p.hotelId===undefined||p.hotelId===''));
-  return p?p.url:null;
-}
-    function getMealPrice(mealsStr, mealName) {
-      const escaped = mealName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(escaped + '\\s*\\(KSh\\s*(\\d+)\\)', 'i');
-      const match = mealsStr.match(regex);
-      return match ? 'KES ' + match[1] : '';
+    function getMealPhoto(name,hotelId){
+      let p=mealPhotos.find(p=>p.mealName&&p.mealName.toLowerCase()===name.toLowerCase()&&p.hotelId===hotelId);
+      if(!p)p=mealPhotos.find(p=>p.mealName&&p.mealName.toLowerCase()===name.toLowerCase()&&(p.hotelId===null||p.hotelId===undefined||p.hotelId===''));
+      return p?p.url:null;
+    }
+    function getMealPrice(mealsStr,mealName){
+      const escaped=mealName.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      const regex=new RegExp(escaped+'\\s*\\(KSh\\s*(\\d+)\\)','i');
+      const match=mealsStr.match(regex);
+      return match?'KES '+match[1]:'';
     }
 
     function init(){
@@ -501,6 +505,36 @@ function getMealPhoto(name,hotelId){
       const username=document.getElementById('premiumUsername').value;const transactionCode=document.getElementById('premiumCode').value;
       if(!username||!transactionCode){alert('Please fill in all fields');return;}
       fetch('/api/payments/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,transactionCode})}).then(r=>r.json()).then(data=>{const msg=document.getElementById('premiumMsg');if(data.error){msg.innerHTML='<div class="ebox" style="margin:0 16px">❌ '+data.error+'</div>';}else{msg.innerHTML='<div class="sbox" style="margin:0 16px">🎉 '+data.message+'</div>';document.getElementById('premiumUsername').value='';document.getElementById('premiumCode').value='';}});
+    }
+
+    function submitSuggestion(){
+      const mealName=document.getElementById('suggestMeal').value;
+      const description=document.getElementById('suggestDesc').value;
+      const username=document.getElementById('suggestUsername').value||(currentUser?currentUser.username:'');
+      if(!mealName){alert('Please enter a meal name');return;}
+      fetch('/api/mealsuggestions/suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mealName,description,username})})
+        .then(r=>r.json()).then(data=>{
+          const msg=document.getElementById('suggestMsg');
+          if(data.error){msg.innerHTML='<div class="ebox">❌ '+data.error+'</div>';}
+          else{msg.innerHTML='<div class="sbox">'+data.message+'</div>';document.getElementById('suggestMeal').value='';document.getElementById('suggestDesc').value='';loadSuggestions();}
+        });
+    }
+
+    function loadSuggestions(){
+      fetch('/api/mealsuggestions').then(r=>r.json()).then(suggestions=>{
+        const div=document.getElementById('suggestList');if(!div)return;
+        const pending=suggestions.filter(s=>s.status==='pending');
+        if(!pending.length){div.innerHTML='<p class="no-res">No suggestions yet. Be the first!</p>';return;}
+        div.innerHTML='';
+        pending.sort((a,b)=>b.votes-a.votes).forEach(s=>{
+          div.innerHTML+='<div class="perf-card"><div class="perf-top"><h3>🍽️ '+s.mealName+'</h3><div class="ploc">'+(s.description||'No description')+'</div></div><div class="perf-footer"><span class="perf-meta">by '+s.username+' · '+s.date+'</span><button class="qvote-btn qvote-up" onclick="voteSuggestion('+s.id+')">👍 '+s.votes+' votes</button></div></div>';
+        });
+      });
+    }
+
+    function voteSuggestion(id){
+      fetch('/api/mealsuggestions/vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})})
+        .then(()=>loadSuggestions());
     }
 
     function renderProfile(){
