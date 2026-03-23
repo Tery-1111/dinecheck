@@ -161,6 +161,10 @@
     .admin-modal-box input { width:100%; padding:11px 13px; margin-bottom:10px; border:1.5px solid #e5e5ea; border-radius:11px; font-size:0.9rem; background:#f2f2f7; outline:none; }
     .admin-modal-box button { width:100%; background:#e63946; color:white; border:none; padding:12px; border-radius:11px; font-size:0.95rem; font-weight:800; cursor:pointer; margin-bottom:8px; }
     .admin-modal-box .cancel-btn { background:#f2f2f7; color:#8e8e93; }
+    .meal-pick-item { background:#f2f2f7; border-radius:10px; padding:8px 10px; display:flex; align-items:center; gap:8px; }
+    .meal-pick-item input[type="checkbox"] { width:16px; height:16px; cursor:pointer; accent-color:#e63946; flex-shrink:0; }
+    .meal-pick-item label { flex:1; font-size:0.78rem; font-weight:600; color:#1c1c1e; cursor:pointer; }
+    .meal-pick-item input[type="number"] { width:62px; padding:5px 6px; border:1.5px solid #e5e5ea; border-radius:7px; font-size:0.76rem; background:white; outline:none; text-align:center; }
     select { appearance:none; }
   </style>
 </head>
@@ -206,7 +210,8 @@
       <h3>Hotel Details</h3>
       <input id="hotelName" type="text" placeholder="Hotel name e.g. Mama Njeri Hotel" />
       <input id="hotelLocation" type="text" placeholder="Location e.g. Njoro Town" />
-      <input id="hotelMeals" type="text" placeholder="Meals e.g. Chapo (KSh 30), Beans (KSh 50)" />
+      <p style="font-weight:700;font-size:0.88rem;margin-bottom:10px;color:#1c1c1e">🍽️ Select Meals & Prices (KSh)</p>
+      <div id="userMealPicker" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px"></div>
       <button onclick="addHotel()">Submit Hotel</button>
     </div>
     <div style="padding:0 16px"><div class="sec-title" style="margin-bottom:12px">🏨 All Hotels</div><div id="hotels"></div></div>
@@ -333,6 +338,19 @@
       ]).then(([meals,photos,reactions])=>{
         allMeals=meals;mealPhotos=photos;allReactions=reactions;
         loadTrending();loadMealPills();loadHotelPerformance();loadPriceChart();loadComradePosts();
+        loadUserMealPicker();
+      });
+    }
+
+    function loadUserMealPicker(){
+      const div=document.getElementById('userMealPicker');if(!div)return;
+      div.innerHTML='';
+      allMeals.forEach(m=>{
+        div.innerHTML+='<div class="meal-pick-item">'+
+          '<input type="checkbox" id="upick-'+m.id+'" />'+
+          '<label for="upick-'+m.id+'">'+m.name+'</label>'+
+          '<input type="number" id="uprice-'+m.id+'" placeholder="KSh" min="0" />'+
+          '</div>';
       });
     }
 
@@ -463,9 +481,25 @@
     }
 
     function addHotel(){
-      const name=document.getElementById('hotelName').value;const location=document.getElementById('hotelLocation').value;const meals=document.getElementById('hotelMeals').value;
-      if(!name||!location||!meals){alert('Please fill in all fields');return;}
-      fetch('/api/hotels',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,location,meals})}).then(()=>{document.getElementById('hotelName').value='';document.getElementById('hotelLocation').value='';document.getElementById('hotelMeals').value='';loadHotels();loadHotelPerformance();loadPriceChart();});
+      const name=document.getElementById('hotelName').value;
+      const location=document.getElementById('hotelLocation').value;
+      if(!name||!location){alert('Please fill in hotel name and location');return;}
+      const selectedMeals=[];
+      allMeals.forEach(m=>{
+        const cb=document.getElementById('upick-'+m.id);
+        const price=document.getElementById('uprice-'+m.id)?.value;
+        if(cb&&cb.checked){selectedMeals.push(m.name+(price?' (KSh '+price+')':''));}
+      });
+      if(!selectedMeals.length){alert('Please select at least one meal');return;}
+      fetch('/api/hotels',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,location,meals:selectedMeals.join(', ')})})
+        .then(r=>r.json()).then(()=>{
+          document.getElementById('hotelName').value='';
+          document.getElementById('hotelLocation').value='';
+          document.querySelectorAll('[id^="upick-"]').forEach(cb=>cb.checked=false);
+          document.querySelectorAll('[id^="uprice-"]').forEach(inp=>inp.value='');
+          loadHotels();loadHotelPerformance();loadPriceChart();
+          alert('✅ Hotel added successfully!');
+        });
     }
 
     function initPolls(){fetch('/api/hotels').then(r=>r.json()).then(hotels=>{const s=document.getElementById('pollHotelSelect');s.innerHTML='<option value="">-- Select a Hotel --</option>';hotels.forEach(h=>{s.innerHTML+='<option value="'+h._id+'">'+h.name+'</option>';});});}
